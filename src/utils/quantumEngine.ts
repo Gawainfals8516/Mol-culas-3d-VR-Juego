@@ -582,3 +582,55 @@ export function relaxMoleculeQuantumStep(
     };
   });
 }
+
+/**
+ * QUANTUM STABILIZATION ENGINE
+ * Automatically corrects geometry, adjusts bond lengths to equilibrium covalent radii,
+ * fixes steric overlap collisions, aligns VSEPR bond angles, and trims illegal valence bonds.
+ */
+export function stabilizeMoleculeGeometry(
+  atoms: Atom3D[],
+  bonds: Bond3D[]
+): { atoms: Atom3D[]; bonds: Bond3D[]; cleanedCount: number } {
+  if (atoms.length === 0) return { atoms, bonds, cleanedCount: 0 };
+
+  // 1. Remove illegal valence bonds
+  let cleanedCount = 0;
+  const newBonds: Bond3D[] = [];
+  const currentValenceMap: Record<string, number> = {};
+
+  atoms.forEach(a => { currentValenceMap[a.id] = 0; });
+
+  bonds.forEach(b => {
+    const a1 = atoms.find(a => a.id === b.atom1Id);
+    const a2 = atoms.find(a => a.id === b.atom2Id);
+    if (!a1 || !a2) return;
+
+    const el1 = ELEMENTS[a1.symbol];
+    const el2 = ELEMENTS[a2.symbol];
+    const bOrder = b.order === 0.5 ? 0 : b.order;
+
+    if (
+      currentValenceMap[a1.id] + bOrder <= (el1?.maxBonds || 4) &&
+      currentValenceMap[a2.id] + bOrder <= (el2?.maxBonds || 4)
+    ) {
+      newBonds.push(b);
+      currentValenceMap[a1.id] += bOrder;
+      currentValenceMap[a2.id] += bOrder;
+    } else {
+      cleanedCount++; // Removed illegal valence bond
+    }
+  });
+
+  // 2. Perform 50 iterations of gradient energy relaxation
+  let optimizedAtoms = JSON.parse(JSON.stringify(atoms));
+  for (let iter = 0; iter < 50; iter++) {
+    optimizedAtoms = relaxMoleculeQuantumStep(optimizedAtoms, newBonds, undefined, null, 0.9);
+  }
+
+  return {
+    atoms: optimizedAtoms,
+    bonds: newBonds,
+    cleanedCount
+  };
+}

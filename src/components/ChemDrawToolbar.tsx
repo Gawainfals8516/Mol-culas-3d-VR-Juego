@@ -10,7 +10,8 @@ import {
   FlaskConical, 
   Layers, 
   HelpCircle,
-  FileDown
+  FileDown,
+  ShieldCheck
 } from 'lucide-react';
 
 interface ChemDrawToolbarProps {
@@ -22,6 +23,7 @@ interface ChemDrawToolbarProps {
   onDeleteSelected: () => void;
   hasSelection: boolean;
   onOptimizeVSEPR: () => void;
+  onStabilizeMolecule: () => void;
   onAddHydrogens: () => void;
   onClear: () => void;
   onLoadPreset: (presetId: string) => void;
@@ -38,6 +40,7 @@ export const ChemDrawToolbar: React.FC<ChemDrawToolbarProps> = ({
   onDeleteSelected,
   hasSelection,
   onOptimizeVSEPR,
+  onStabilizeMolecule,
   onAddHydrogens,
   onClear,
   onLoadPreset,
@@ -48,7 +51,7 @@ export const ChemDrawToolbar: React.FC<ChemDrawToolbarProps> = ({
   const [showHelp, setShowHelp] = useState(false);
 
   return (
-    <div className="absolute top-4 left-4 z-20 flex flex-col gap-2 max-w-sm pointer-events-auto">
+    <div className="absolute top-14 left-4 z-20 flex flex-col gap-2 max-w-sm pointer-events-auto">
       {/* Molecule Presets & Quick Loader Bar */}
       <div className="flex items-center gap-1.5 p-1.5 bg-gray-900/90 backdrop-blur-md border border-gray-800 rounded-xl shadow-xl">
         <button
@@ -59,7 +62,20 @@ export const ChemDrawToolbar: React.FC<ChemDrawToolbarProps> = ({
           className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-sky-400 bg-sky-950/60 hover:bg-sky-900/80 border border-sky-800/60 rounded-lg transition-colors whitespace-nowrap"
         >
           <FlaskConical className="w-3.5 h-3.5" />
-          <span>Moléculas Modelo</span>
+          <span>Modelos</span>
+        </button>
+
+        {/* PROMINENT STABILIZE MOLECULE BUTTON */}
+        <button
+          onClick={() => {
+            sounds.playBond();
+            onStabilizeMolecule();
+          }}
+          title="Estabilizar geometría molecular y corregir violaciones de valencia"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-emerald-200 bg-emerald-700 hover:bg-emerald-600 border border-emerald-500 rounded-lg transition-all shadow-md shadow-emerald-700/20 whitespace-nowrap animate-pulse"
+        >
+          <ShieldCheck className="w-3.5 h-3.5 text-white" />
+          <span>Estabilizar Molécula</span>
         </button>
 
         <button
@@ -68,10 +84,10 @@ export const ChemDrawToolbar: React.FC<ChemDrawToolbarProps> = ({
             onOptimizeVSEPR();
           }}
           title="Relajar geometría molecular con fuerzas físicas VSEPR"
-          className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-amber-300 bg-amber-950/50 hover:bg-amber-900/70 border border-amber-800/50 rounded-lg transition-colors whitespace-nowrap"
+          className="flex items-center gap-1 px-2 py-1.5 text-xs font-medium text-amber-300 bg-amber-950/50 hover:bg-amber-900/70 border border-amber-800/50 rounded-lg transition-colors whitespace-nowrap"
         >
           <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-          <span>VSEPR 3D</span>
+          <span>VSEPR</span>
         </button>
 
         <button
@@ -275,10 +291,9 @@ export const ChemDrawToolbar: React.FC<ChemDrawToolbarProps> = ({
       {showHelp && (
         <div className="p-3 bg-gray-900/95 backdrop-blur-md border border-gray-800 rounded-xl shadow-2xl text-xs space-y-1.5 text-gray-300">
           <div className="font-semibold text-sky-400">Cómo interactuar y crear:</div>
-          <p>• <strong>Crear Enlaces:</strong> Toca un átomo para seleccionarlo (azul) y luego toca otro átomo para unirlos con el tipo de enlace activo.</p>
-          <p>• <strong>Mover en 3D:</strong> Mantén presionado y arrastra cualquier átomo en el espacio 3D.</p>
-          <p>• <strong>Optimización VSEPR:</strong> Presiona &quot;VSEPR 3D&quot; para que la física repulsiva de electrones acomode los ángulos automáticamente.</p>
-          <p>• <strong>En Realidad Virtual / Cardboard:</strong> Alinea la mira central sobre los átomos para seleccionarlos.</p>
+          <p>• <strong>Estabilizar:</strong> Haz clic en &quot;Estabilizar Molécula&quot; para arreglar la geometría y valencias automáticamente.</p>
+          <p>• <strong>Leyes Físicas:</strong> Si intentas agregar enlaces que violan la valencia del elemento, la app aplicará restricciones físicas.</p>
+          <p>• <strong>Anuncio de Estabilidad:</strong> Mira la barra superior para saber si la molécula es estable o no puede existir.</p>
         </div>
       )}
     </div>
