@@ -1,7 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { Atom3D, Bond3D, Molecule3D, ViewMode, VRMode, ZoomLevel } from '../types/chemistry';
+import { ExternalFieldsConfig, MolecularOrbitalType, Molecule3D, ViewMode, VRMode, ZoomLevel } from '../types/chemistry';
 import { ELEMENTS } from '../data/elements';
+import { calculateQuantumDipole, computeIntermolecularForces, evaluateMolecularOrbital } from '../utils/quantumEngine';
 import { sounds } from '../utils/audio';
 
 interface VRCanvasProps {
@@ -16,7 +17,11 @@ interface VRCanvasProps {
   quantumParticlesCount: number;
   higgsFieldStrength: number;
   activeOrbital: string; // '1s' | '2s' | '2p' | '3d'
+  selectedMolecularOrbital?: MolecularOrbitalType;
+  showMolecularOrbital?: boolean;
   showDipole: boolean;
+  showIntermolecularForces?: boolean;
+  externalFields?: ExternalFieldsConfig;
   ipd: number; // Interpupillary distance in mm
   onGazeProgress?: (progress: number) => void; // 0 to 1
 }
@@ -33,7 +38,11 @@ export const VRCanvas: React.FC<VRCanvasProps> = ({
   quantumParticlesCount,
   higgsFieldStrength,
   activeOrbital,
+  selectedMolecularOrbital = 'HOMO',
+  showMolecularOrbital = false,
   showDipole,
+  showIntermolecularForces = false,
+  externalFields,
   ipd,
   onGazeProgress
 }) => {
@@ -46,8 +55,10 @@ export const VRCanvas: React.FC<VRCanvasProps> = ({
 
   // Group references
   const moleculeGroupRef = useRef<THREE.Group>(new THREE.Group());
+  const molecularOrbitalGroupRef = useRef<THREE.Group>(new THREE.Group());
   const orbitalsGroupRef = useRef<THREE.Group>(new THREE.Group());
   const quantumFieldGroupRef = useRef<THREE.Group>(new THREE.Group());
+  const externalFieldsGroupRef = useRef<THREE.Group>(new THREE.Group());
 
   // Interactive tracking
   const atomMeshesRef = useRef<Map<string, THREE.Mesh>>(new Map());
@@ -117,8 +128,10 @@ export const VRCanvas: React.FC<VRCanvasProps> = ({
 
     // Attach group layers
     scene.add(moleculeGroupRef.current);
+    scene.add(molecularOrbitalGroupRef.current);
     scene.add(orbitalsGroupRef.current);
     scene.add(quantumFieldGroupRef.current);
+    scene.add(externalFieldsGroupRef.current);
 
     // Resize handler
     const handleResize = () => {
@@ -184,7 +197,7 @@ export const VRCanvas: React.FC<VRCanvasProps> = ({
     }
   }, [zoomLevel]);
 
-  // 3. Build Molecule 3D Meshes
+  // 3. Build Molecule 3D Meshes & Atomic Radii / Intermolecular Interactions
   useEffect(() => {
     const group = moleculeGroupRef.current;
     // Clear old meshes
@@ -208,6 +221,7 @@ export const VRCanvas: React.FC<VRCanvasProps> = ({
 
     molecule.atoms.forEach(atom => {
       const elem = ELEMENTS[atom.symbol] || {
+        atomicRadius: 0.8,
         covalentRadius: 0.7,
         vdwRadius: 1.5,
         cpkColor: '#9CA3AF'
@@ -218,6 +232,8 @@ export const VRCanvas: React.FC<VRCanvasProps> = ({
         radius = elem.vdwRadius * 0.6;
       } else if (viewMode === 'wireframe') {
         radius = 0.15;
+      } else if (viewMode === 'atomic-radii') {
+        radius = elem.atomicRadius * 0.8;
       }
 
       const geom = new THREE.SphereGeometry(radius, 32, 32);
@@ -243,6 +259,21 @@ export const VRCanvas: React.FC<VRCanvasProps> = ({
 
       group.add(mesh);
       atomMeshesRef.current.set(atom.id, mesh);
+
+      // Render translucent Van der Waals / Atomic Shell overlay if viewMode === 'atomic-radii'
+      if (viewMode === 'atomic-radii') {
+        const vdwGeom = new THREE.SphereGeometry(elem.vdwRadius * 0.7, 24, 24);
+        const vdwMat = new THREE.MeshPhysicalMaterial({
+          color: new THREE.Color(elem.cpkColor),
+          transparent: true,
+          opacity: 0.2,
+          roughness: 0.1,
+          wireframe: true
+        });
+        const vdwMesh = new THREE.Mesh(vdwGeom, vdwMat);
+        vdwMesh.position.set(atom.x, atom.y, atom.z);
+        group.add(vdwMesh);
+      }
     });
 
     // Build Bonds
@@ -302,27 +333,16 @@ export const VRCanvas: React.FC<VRCanvasProps> = ({
       }
     });
 
-    // Optional Dipole Moment arrow
+    // Render Quantum Dipole Moment Arrow
     if (showDipole && molecule.atoms.length > 1) {
-      let dx = 0; let dy = 0; let dz = 0;
-      molecule.bonds.forEach(b => {
-        const a1 = molecule.atoms.find(a => a.id === b.atom1Id);
-        const a2 = molecule.atoms.find(a => a.id === b.atom2Id);
-        if (a1 && a2) {
-          const en1 = ELEMENTS[a1.symbol]?.electronegativity || 2.5;
-          const en2 = ELEMENTS[a2.symbol]?.electronegativity || 2.5;
-          dx += (a2.x - a1.x) * (en2 - en1);
-          dy += (a2.y - a1.y) * (en2 - en1);
-          dz += (a2.z - a1.z) * (en2 - en1);
-        }
-      });
-      const dipoleDir = new THREE.Vector3(dx, dy, dz);
+      const qDipole = calculateQuantumDipole(molecule.atoms, molecule.bonds, externalFields);
+      const dipoleDir = new THREE.Vector3(...qDipole.dipoleVector);
       const dipoleLength = dipoleDir.length();
-      if (dipoleLength > 0.2) {
+      if (dipoleLength > 0.1) {
         const arrow = new THREE.ArrowHelper(
           dipoleDir.normalize(),
           new THREE.Vector3(0, 0, 0),
-          Math.min(dipoleLength * 0.8, 3.5),
+          Math.min(dipoleLength * 0.6, 4.0),
           0x06b6d4,
           0.4,
           0.25
@@ -331,9 +351,168 @@ export const VRCanvas: React.FC<VRCanvasProps> = ({
       }
     }
 
-  }, [molecule, viewMode, selectedAtomId, zoomLevel, showDipole]);
+    // Render Intermolecular Interaction Forces (Lennard-Jones, H-bonds)
+    if (showIntermolecularForces && molecule.atoms.length > 1) {
+      const interactions = computeIntermolecularForces(molecule.atoms, molecule.bonds);
+      interactions.forEach(inter => {
+        const a1 = molecule.atoms.find(a => a.id === inter.atom1Id);
+        const a2 = molecule.atoms.find(a => a.id === inter.atom2Id);
+        if (!a1 || !a2) return;
 
-  // 4. Build Atomic Orbitals 3D Quantum Cloud
+        const points = [
+          new THREE.Vector3(a1.x, a1.y, a1.z),
+          new THREE.Vector3(a2.x, a2.y, a2.z)
+        ];
+        const lineGeom = new THREE.BufferGeometry().setFromPoints(points);
+        let lineColor = 0xa855f7; // purple VdW
+        if (inter.type === 'hydrogen-bond') lineColor = 0x38bdf8;
+        else if (inter.type === 'coulomb-repulsion') lineColor = 0xf43f5e;
+        else if (inter.type === 'coulomb-attraction') lineColor = 0x10b981;
+
+        const lineMat = new THREE.LineDashedMaterial({
+          color: lineColor,
+          dashSize: 0.15,
+          gapSize: 0.1
+        });
+        const line = new THREE.Line(lineGeom, lineMat);
+        line.computeLineDistances();
+        group.add(line);
+      });
+    }
+
+  }, [molecule, viewMode, selectedAtomId, zoomLevel, showDipole, showIntermolecularForces, externalFields]);
+
+
+  // 4. Build Molecular Orbitals (HOMO/LUMO/Sigma/Pi) Cloud Layer
+  useEffect(() => {
+    const group = molecularOrbitalGroupRef.current;
+    while (group.children.length > 0) {
+      const child = group.children[0];
+      if (child instanceof THREE.Points) {
+        child.geometry.dispose();
+        if (Array.isArray(child.material)) child.material.forEach(m => m.dispose());
+        else child.material.dispose();
+      }
+      group.remove(child);
+    }
+
+    if (!showMolecularOrbital || (zoomLevel !== 'molecular' && zoomLevel !== 'atomic')) return;
+
+    // Grid sampling of LCAO Wavefunction psi_MO(x,y,z)
+    const particleCount = 14000;
+    const positions = new Float32Array(particleCount * 3);
+    const colors = new Float32Array(particleCount * 3);
+
+    const cPos = new THREE.Color(0x38bdf8); // Cyan for +
+    const cNeg = new THREE.Color(0xf43f5e); // Rose for -
+
+    let idx = 0;
+    const bounds = 4.5;
+
+    for (let i = 0; i < particleCount * 2; i++) {
+      if (idx >= particleCount) break;
+
+      const x = (Math.random() - 0.5) * bounds * 2;
+      const y = (Math.random() - 0.5) * bounds * 2;
+      const z = (Math.random() - 0.5) * bounds * 2;
+
+      const mo = evaluateMolecularOrbital(
+        molecule.atoms,
+        molecule.bonds,
+        selectedMolecularOrbital,
+        x,
+        y,
+        z
+      );
+
+      // Rejection sampling based on probability density |psi|^2
+      if (Math.random() < mo.probabilityDensity * 12.0) {
+        positions[idx * 3] = x;
+        positions[idx * 3 + 1] = y;
+        positions[idx * 3 + 2] = z;
+
+        const col = mo.phase > 0 ? cPos : cNeg;
+        colors[idx * 3] = col.r;
+        colors[idx * 3 + 1] = col.g;
+        colors[idx * 3 + 2] = col.b;
+
+        idx++;
+      }
+    }
+
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.BufferAttribute(positions.subarray(0, idx * 3), 3));
+    geom.setAttribute('color', new THREE.BufferAttribute(colors.subarray(0, idx * 3), 3));
+
+    const pMat = new THREE.PointsMaterial({
+      size: 0.065,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.8,
+      blending: THREE.AdditiveBlending
+    });
+
+    const points = new THREE.Points(geom, pMat);
+    group.add(points);
+
+  }, [molecule, selectedMolecularOrbital, showMolecularOrbital, zoomLevel]);
+
+
+  // 5. Build External Physical Fields Overlay (Electric & Magnetic Vector Field Lines)
+  useEffect(() => {
+    const group = externalFieldsGroupRef.current;
+    while (group.children.length > 0) {
+      const child = group.children[0];
+      if (child instanceof THREE.Mesh) {
+        child.geometry?.dispose();
+      }
+      group.remove(child);
+    }
+
+    if (!externalFields) return;
+
+    const [Ex, Ey, Ez] = externalFields.electricField;
+    const [Bx, By, Bz] = externalFields.magneticField;
+
+    const eMag = Math.hypot(Ex, Ey, Ez);
+    const bMag = Math.hypot(Bx, By, Bz);
+
+    // Render Electric Field Arrows
+    if (eMag > 0.05) {
+      const eDir = new THREE.Vector3(Ex, Ey, Ez).normalize();
+      [-3, 0, 3].forEach(offset => {
+        const arrow = new THREE.ArrowHelper(
+          eDir,
+          new THREE.Vector3(offset, -3.5, 0),
+          3.0,
+          0xf59e0b,
+          0.5,
+          0.3
+        );
+        group.add(arrow);
+      });
+    }
+
+    // Render Magnetic Field Vector Lines
+    if (bMag > 0.05) {
+      const bDir = new THREE.Vector3(Bx, By, Bz).normalize();
+      [-3, 0, 3].forEach(offset => {
+        const arrow = new THREE.ArrowHelper(
+          bDir,
+          new THREE.Vector3(-3.5, offset, 0),
+          3.0,
+          0x10b981,
+          0.5,
+          0.3
+        );
+        group.add(arrow);
+      });
+    }
+
+  }, [externalFields]);
+
+
+  // 6. Build Atomic Orbitals 3D Quantum Cloud
   useEffect(() => {
     const group = orbitalsGroupRef.current;
     while (group.children.length > 0) {
@@ -361,31 +540,25 @@ export const VRCanvas: React.FC<VRCanvasProps> = ({
 
     let idx = 0;
     for (let i = 0; i < particleCount; i++) {
-      // Rejection sampling or spherical coordinate probability
       let r = 0;
       let theta = Math.acos(2 * Math.random() - 1);
       let phi = Math.random() * Math.PI * 2;
-      let psi = 0;
       let phaseColor = cNeutral;
 
       if (activeOrbital === '1s') {
-        // 1s orbital: spherically symmetric e^(-r)
         r = -Math.log(1 - Math.random() * 0.98) * 1.3;
         phaseColor = cPositive;
       } else if (activeOrbital === '2s') {
-        // 2s orbital: radial node at r = 2
         r = Math.random() * 5.5;
         const radialPart = (2 - r) * Math.exp(-r / 2);
         if (Math.random() > radialPart * radialPart * 1.5) continue;
         phaseColor = radialPart > 0 ? cPositive : cNegative;
       } else if (activeOrbital === '2p') {
-        // 2p_z orbital: cos(theta) * r * e^(-r/2)
         r = Math.random() * 6.0;
         const prob = Math.cos(theta) * Math.cos(theta) * r * r * Math.exp(-r);
         if (Math.random() > prob * 2.2) continue;
         phaseColor = Math.cos(theta) > 0 ? cPositive : cNegative;
       } else if (activeOrbital === '3d') {
-        // 3d_z^2 orbital: (3cos^2(theta) - 1)
         r = Math.random() * 7.0;
         const angular = 3 * Math.cos(theta) * Math.cos(theta) - 1;
         const prob = angular * angular * r * r * Math.exp(-2 * r / 3);
@@ -422,7 +595,7 @@ export const VRCanvas: React.FC<VRCanvasProps> = ({
     const points = new THREE.Points(geom, pMat);
     group.add(points);
 
-    // Add Central Nucleus (Protons + Neutrons bundle)
+    // Add Central Nucleus
     const nucleusGeom = new THREE.SphereGeometry(0.35, 24, 24);
     const nucleusMat = new THREE.MeshPhysicalMaterial({
       color: 0xf59e0b,
@@ -435,7 +608,7 @@ export const VRCanvas: React.FC<VRCanvasProps> = ({
 
   }, [activeOrbital, zoomLevel]);
 
-  // 5. Build Quantum Vacuum & Matter Field Genesis
+  // 7. Build Quantum Vacuum & Matter Field Genesis
   useEffect(() => {
     const group = quantumFieldGroupRef.current;
     while (group.children.length > 0) {
@@ -452,7 +625,6 @@ export const VRCanvas: React.FC<VRCanvasProps> = ({
     group.visible = isVisibleInZoom;
     if (!isVisibleInZoom) return;
 
-    // A. Quantum Field Grid Surface with undulating wave motion
     const planeGeom = new THREE.PlaneGeometry(16, 16, 64, 64);
     const planeMat = new THREE.MeshStandardMaterial({
       color: 0x1e1b4b,
@@ -468,7 +640,6 @@ export const VRCanvas: React.FC<VRCanvasProps> = ({
     plane.name = 'quantumGrid';
     group.add(plane);
 
-    // B. Vacuum Fluctuation Virtual Particles (particle-antiparticle pairs)
     const pCount = Math.max(12, quantumParticlesCount * 3);
     const particlesGeom = new THREE.BufferGeometry();
     const pPos = new Float32Array(pCount * 3);
@@ -500,7 +671,6 @@ export const VRCanvas: React.FC<VRCanvasProps> = ({
     particles.name = 'vacuumParticles';
     group.add(particles);
 
-    // C. Higgs Condensation / Mass Energy Core
     const higgsGeom = new THREE.IcosahedronGeometry(0.8 + higgsFieldStrength * 0.4, 2);
     const higgsMat = new THREE.MeshPhysicalMaterial({
       color: 0x8b5cf6,
@@ -515,7 +685,7 @@ export const VRCanvas: React.FC<VRCanvasProps> = ({
 
   }, [quantumParticlesCount, higgsFieldStrength, zoomLevel]);
 
-  // 6. Animation Loop (60 FPS WebGL / Stereoscopic Dual-Camera VR)
+  // 8. Animation Loop (60 FPS WebGL / Stereoscopic Dual-Camera VR)
   useEffect(() => {
     let animId: number;
     const clock = new THREE.Clock();
@@ -526,14 +696,17 @@ export const VRCanvas: React.FC<VRCanvasProps> = ({
       const delta = clock.getDelta();
       const elapsed = clock.getElapsedTime();
 
-      // Rotate orbitals / quantum fields gently
+      // Rotate molecular orbital cloud
+      if (molecularOrbitalGroupRef.current) {
+        molecularOrbitalGroupRef.current.rotation.y += delta * 0.2;
+      }
+
       if (orbitalsGroupRef.current.visible) {
         orbitalsGroupRef.current.rotation.y += delta * 0.25;
       }
 
       if (quantumFieldGroupRef.current.visible) {
         quantumFieldGroupRef.current.rotation.y += delta * 0.15;
-        // Undulate quantum vacuum plane vertices
         const gridMesh = quantumFieldGroupRef.current.getObjectByName('quantumGrid') as THREE.Mesh;
         if (gridMesh && gridMesh.geometry) {
           const pos = gridMesh.geometry.attributes.position;
@@ -546,7 +719,6 @@ export const VRCanvas: React.FC<VRCanvasProps> = ({
           pos.needsUpdate = true;
         }
 
-        // Pulse Higgs Core
         const higgs = quantumFieldGroupRef.current.getObjectByName('higgsCore');
         if (higgs) {
           const s = 1 + Math.sin(elapsed * 4) * 0.08;
@@ -556,7 +728,6 @@ export const VRCanvas: React.FC<VRCanvasProps> = ({
         }
       }
 
-      // Camera orientation & Orbit computation
       const camera = cameraRef.current;
       const renderer = rendererRef.current;
       const scene = sceneRef.current;
@@ -565,23 +736,19 @@ export const VRCanvas: React.FC<VRCanvasProps> = ({
       const target = orbitRef.current.target;
       const radius = orbitRef.current.radius;
 
-      // Handle Android Gyroscope in VR & 360 mode
       if ((vrMode === 'cardboard' || vrMode === 'gyro360') && orientationRef.current) {
         const { alpha, beta, gamma } = orientationRef.current;
-        // Convert Euler angles (degrees) to radians
         const degToRad = Math.PI / 180;
-        const radAlpha = alpha * degToRad; // compass Z
-        const radBeta = (beta - 90) * degToRad; // pitch X
-        const radGamma = gamma * degToRad; // roll Y
+        const radAlpha = alpha * degToRad;
+        const radBeta = (beta - 90) * degToRad;
+        const radGamma = gamma * degToRad;
 
         const euler = new THREE.Euler(radBeta, radAlpha, -radGamma, 'YXZ');
         camera.quaternion.setFromEuler(euler);
 
-        // Position camera back along its look vector
         const lookDir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
         camera.position.copy(target).addScaledVector(lookDir, -radius);
       } else {
-        // Standard mouse/touch spherical orbit
         const theta = orbitRef.current.theta;
         const phi = orbitRef.current.phi;
 
@@ -591,7 +758,6 @@ export const VRCanvas: React.FC<VRCanvasProps> = ({
         camera.lookAt(target);
       }
 
-      // VR Reticle Gaze Raycasting (Cardboard VR mode)
       if (vrMode === 'cardboard') {
         raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
         const meshes = Array.from(atomMeshesRef.current.values());
@@ -607,7 +773,7 @@ export const VRCanvas: React.FC<VRCanvasProps> = ({
             if (progress >= 1) {
               sounds.playClick();
               onSelectAtom(atomId);
-              gazeStartTimeRef.current = performance.now() + 600; // prevent rapid re-trigger
+              gazeStartTimeRef.current = performance.now() + 600;
             }
           } else {
             gazeTargetRef.current = atomId;
@@ -620,7 +786,6 @@ export const VRCanvas: React.FC<VRCanvasProps> = ({
         }
       }
 
-      // Rendering: Stereoscopic Dual-Viewport or Single Canvas
       if (vrMode === 'cardboard' && cameraLRef.current && cameraRRef.current) {
         const w = renderer.domElement.clientWidth;
         const h = renderer.domElement.clientHeight;
@@ -628,24 +793,20 @@ export const VRCanvas: React.FC<VRCanvasProps> = ({
         const cameraL = cameraLRef.current;
         const cameraR = cameraRRef.current;
 
-        // Copy rotation and base position from main camera
         cameraL.quaternion.copy(camera.quaternion);
         cameraR.quaternion.copy(camera.quaternion);
 
-        // Apply Interpupillary distance offset (IPD)
-        const ipdMeters = (ipd || 64) * 0.002; // scale for scene units
+        const ipdMeters = (ipd || 64) * 0.002;
         const rightVec = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
 
         cameraL.position.copy(camera.position).addScaledVector(rightVec, -ipdMeters / 2);
         cameraR.position.copy(camera.position).addScaledVector(rightVec, ipdMeters / 2);
 
-        // Left Eye Viewport
         renderer.setScissorTest(true);
         renderer.setScissor(0, 0, halfW, h);
         renderer.setViewport(0, 0, halfW, h);
         renderer.render(scene, cameraL);
 
-        // Right Eye Viewport
         renderer.setScissor(halfW, 0, halfW, h);
         renderer.setViewport(halfW, 0, halfW, h);
         renderer.render(scene, cameraR);
@@ -663,14 +824,13 @@ export const VRCanvas: React.FC<VRCanvasProps> = ({
     return () => cancelAnimationFrame(animId);
   }, [vrMode, ipd, higgsFieldStrength, onSelectAtom, onGazeProgress]);
 
-  // 7. Mouse & Touch Orbit / Drag Interactions
+  // Mouse & Touch Orbit / Drag Interactions
   const handlePointerDown = (e: React.PointerEvent) => {
     if (!containerRef.current || !cameraRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
     const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
 
-    // Check for atom click
     const raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(new THREE.Vector2(x, y), cameraRef.current);
     const meshes = Array.from(atomMeshesRef.current.values());
@@ -684,14 +844,12 @@ export const VRCanvas: React.FC<VRCanvasProps> = ({
       return;
     }
 
-    // Otherwise orbit
     mouseRef.current.isDown = true;
     mouseRef.current.lastX = e.clientX;
     mouseRef.current.lastY = e.clientY;
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
-    // If dragging an atom in 3D
     if (isDraggingAtomRef.current && cameraRef.current && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
       const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
@@ -699,7 +857,6 @@ export const VRCanvas: React.FC<VRCanvasProps> = ({
 
       const raycaster = new THREE.Raycaster();
       raycaster.setFromCamera(new THREE.Vector2(x, y), cameraRef.current);
-      // Plane facing camera at target
       const dragPlane = new THREE.Plane().setFromNormalAndCoplanarPoint(
         cameraRef.current.getWorldDirection(new THREE.Vector3()).negate(),
         new THREE.Vector3(0, 0, 0)
@@ -733,13 +890,11 @@ export const VRCanvas: React.FC<VRCanvasProps> = ({
     isDraggingAtomRef.current = null;
   };
 
-  // Pinch / Wheel Zoom
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
     orbitRef.current.radius = Math.max(2.5, Math.min(25, orbitRef.current.radius + e.deltaY * 0.015));
   };
 
-  // Screen Tap in Cardboard VR mode acts as Cardboard trigger
   const handleCanvasClick = () => {
     if (vrMode === 'cardboard') {
       if (gazeTargetRef.current) {

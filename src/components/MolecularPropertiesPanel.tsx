@@ -2,23 +2,25 @@ import React, { useState } from 'react';
 import { Molecule3D } from '../types/chemistry';
 import { ELEMENTS } from '../data/elements';
 import { computeMolecularProperties } from '../utils/vsepr';
+import { computeExternalFieldEffects } from '../utils/quantumEngine';
+import { ExternalFieldsConfig } from '../types/chemistry';
 import { sounds } from '../utils/audio';
 import { 
   Activity, 
-  Zap, 
   Compass, 
   Weight, 
   ChevronDown, 
   ChevronUp, 
-  Info,
-  Maximize2,
   Atom,
-  Flame
+  Flame,
+  Zap,
+  Radio
 } from 'lucide-react';
 
 interface MolecularPropertiesPanelProps {
   molecule: Molecule3D;
   selectedAtomId?: string | null;
+  externalFields?: ExternalFieldsConfig;
   isOpen: boolean;
   onToggleOpen: () => void;
 }
@@ -26,6 +28,7 @@ interface MolecularPropertiesPanelProps {
 export const MolecularPropertiesPanel: React.FC<MolecularPropertiesPanelProps> = ({
   molecule,
   selectedAtomId,
+  externalFields,
   isOpen,
   onToggleOpen
 }) => {
@@ -35,6 +38,10 @@ export const MolecularPropertiesPanel: React.FC<MolecularPropertiesPanelProps> =
   const props = computeMolecularProperties(molecule.atoms, molecule.bonds);
   const selectedAtom = molecule.atoms.find(a => a.id === selectedAtomId);
   const selectedElem = selectedAtom ? ELEMENTS[selectedAtom.symbol] : null;
+
+  const fieldEffects = externalFields
+    ? computeExternalFieldEffects(molecule.atoms, molecule.bonds, externalFields)
+    : null;
 
   return (
     <div className="absolute top-16 left-4 md:left-[23rem] z-20 flex flex-col gap-2 w-80 max-w-[calc(100vw-2rem)] pointer-events-auto transition-all duration-200">
@@ -50,7 +57,7 @@ export const MolecularPropertiesPanel: React.FC<MolecularPropertiesPanelProps> =
         >
           <div className="flex items-center gap-2">
             <Activity className="w-4 h-4 text-sky-400" />
-            <span className="text-xs font-bold text-gray-100 tracking-wide">Propiedades Moleculares</span>
+            <span className="text-xs font-bold text-gray-100 tracking-wide">Propiedades Físico-Cuánticas</span>
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="Cálculo físico en tiempo real" />
           </div>
 
@@ -84,7 +91,7 @@ export const MolecularPropertiesPanel: React.FC<MolecularPropertiesPanelProps> =
           </div>
         )}
 
-        {/* Expanded Full Physical Properties Content */}
+        {/* Expanded Content */}
         {isOpen && (
           <div className="p-3.5 space-y-3.5 text-xs text-gray-300 max-h-[75vh] overflow-y-auto">
             {/* 1. MOLECULAR WEIGHT & FORMULA CARD */}
@@ -105,18 +112,14 @@ export const MolecularPropertiesPanel: React.FC<MolecularPropertiesPanelProps> =
                   {props.formula}
                 </div>
               </div>
-              <div className="flex items-center justify-between text-[10px] text-gray-500 border-t border-gray-800/80 pt-1 font-mono tabular-nums">
-                <span>{molecule.atoms.length} núcleos atómicos</span>
-                <span>{props.totalValenceElectrons} e⁻ de valencia</span>
-              </div>
             </div>
 
-            {/* 2. POLARITY & DIPOLE MOMENT CARD */}
+            {/* 2. QUANTUM POLARITY & DIPOLE MOMENT */}
             <div className="p-2.5 bg-gray-950/70 border border-gray-800 rounded-xl space-y-2">
               <div className="flex items-center justify-between text-[11px]">
                 <div className="flex items-center gap-1.5 text-gray-400 font-medium">
                   <Compass className="w-3.5 h-3.5 text-indigo-400" />
-                  <span>Momento Dipolar & Polaridad</span>
+                  <span>Momento Dipolar Cuántico</span>
                 </div>
                 <span 
                   className="text-[10px] font-semibold px-2 py-0.5 rounded border"
@@ -130,71 +133,49 @@ export const MolecularPropertiesPanel: React.FC<MolecularPropertiesPanelProps> =
                 </span>
               </div>
 
-              <div className="flex items-baseline justify-between">
-                <div className="flex items-baseline gap-1 font-mono tabular-nums">
+              <div className="flex items-baseline justify-between font-mono tabular-nums">
+                <div className="flex items-baseline gap-1">
                   <span className="text-xl font-bold" style={{ color: props.dipoleColor }}>
                     {props.dipoleDebye.toFixed(2)}
                   </span>
                   <span className="text-xs text-gray-400">Debye (D)</span>
                 </div>
-                <span className="text-[10px] text-gray-500 font-mono tabular-nums">
+                <span className="text-[10px] text-gray-500">
                   {(props.dipoleDebye * 3.33564).toFixed(1)} × 10⁻³⁰ C·m
                 </span>
               </div>
-
-              {/* Polarity Spectrum Bar */}
-              <div className="space-y-1">
-                <div className="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden flex">
-                  <div 
-                    className="h-full transition-all duration-300 rounded-full"
-                    style={{ 
-                      width: `${Math.min(100, (props.dipoleDebye / 4) * 100)}%`,
-                      backgroundColor: props.dipoleColor
-                    }}
-                  />
-                </div>
-                <div className="flex justify-between text-[9px] text-gray-500 font-mono">
-                  <span>0 D (Apolar)</span>
-                  <span>1.85 D (Agua)</span>
-                  <span>4+ D (Iónico)</span>
-                </div>
-              </div>
-
-              <p className="text-[10px] text-gray-400 leading-relaxed border-t border-gray-800/80 pt-1.5">
-                {props.dipoleDescription}
-              </p>
             </div>
 
-            {/* 3. TOTAL BOND ENERGY / ENTHALPY CARD */}
+            {/* 3. EXTERNAL FIELD EFFECTS (Stark, Zeeman, Larmor) */}
+            {fieldEffects && (
+              <div className="p-2.5 bg-gray-950/70 border border-amber-900/40 rounded-xl space-y-1.5 font-mono text-[10px]">
+                <div className="flex items-center justify-between text-[11px] text-amber-400 font-semibold font-sans">
+                  <span className="flex items-center gap-1">
+                    <Zap className="w-3.5 h-3.5 text-amber-400" />
+                    Efectos de Campo Cuántico
+                  </span>
+                </div>
+                <div className="flex justify-between text-gray-300">
+                  <span>Desplazamiento Stark:</span>
+                  <span className="text-amber-300">{fieldEffects.starkEnergyShiftEv} eV</span>
+                </div>
+                <div className="flex justify-between text-gray-300">
+                  <span>Desdoblamiento Zeeman:</span>
+                  <span className="text-emerald-400">{fieldEffects.zeemanSplittingEv} eV</span>
+                </div>
+                <div className="flex justify-between text-gray-300">
+                  <span>Frecuencia de Larmor:</span>
+                  <span className="text-sky-300">{fieldEffects.larmorPrecessionFreq} GHz</span>
+                </div>
+              </div>
+            )}
+
+            {/* 4. BOND ENTHALPY */}
             <div className="p-2.5 bg-gray-950/70 border border-gray-800 rounded-xl space-y-2">
               <div className="flex items-center justify-between text-[11px]">
                 <div className="flex items-center gap-1.5 text-gray-400 font-medium">
                   <Flame className="w-3.5 h-3.5 text-amber-400" />
                   <span>Energía Total de Enlaces</span>
-                </div>
-                <div className="flex items-center p-0.5 bg-gray-900 border border-gray-800 rounded-md">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setEnergyUnit('kJ');
-                    }}
-                    className={`px-1.5 py-0.5 text-[9px] font-mono rounded transition-colors ${
-                      energyUnit === 'kJ' ? 'bg-amber-600 text-white font-bold' : 'text-gray-400 hover:text-white'
-                    }`}
-                  >
-                    kJ/mol
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setEnergyUnit('kcal');
-                    }}
-                    className={`px-1.5 py-0.5 text-[9px] font-mono rounded transition-colors ${
-                      energyUnit === 'kcal' ? 'bg-amber-600 text-white font-bold' : 'text-gray-400 hover:text-white'
-                    }`}
-                  >
-                    kcal/mol
-                  </button>
                 </div>
               </div>
 
@@ -209,47 +190,14 @@ export const MolecularPropertiesPanel: React.FC<MolecularPropertiesPanelProps> =
                     {energyUnit === 'kJ' ? 'kJ/mol' : 'kcal/mol'}
                   </span>
                 </div>
-                <span className="text-[10px] text-gray-400">
-                  Promedio: {props.averageBondEnergyKJ} kJ/enlace
-                </span>
               </div>
-
-              {/* Expandable Breakdown of bond contributions */}
-              {props.bondBreakdown.length > 0 && (
-                <div className="border-t border-gray-800/80 pt-1.5">
-                  <button
-                    onClick={() => setShowBondBreakdown(!showBondBreakdown)}
-                    className="flex items-center justify-between w-full text-[10px] text-sky-400 hover:text-sky-300 font-medium"
-                  >
-                    <span>Desglose por Tipo de Enlace ({props.bondBreakdown.length})</span>
-                    {showBondBreakdown ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                  </button>
-
-                  {showBondBreakdown && (
-                    <div className="mt-1.5 space-y-1 max-h-36 overflow-y-auto pr-1">
-                      {props.bondBreakdown.map((b, idx) => (
-                        <div 
-                          key={idx}
-                          className="flex items-center justify-between text-[10px] p-1 bg-gray-900/60 rounded border border-gray-800/60 font-mono tabular-nums"
-                        >
-                          <span className="text-gray-200 font-bold">{b.label}</span>
-                          <span className="text-gray-400">× {b.count}</span>
-                          <span className="text-amber-400">
-                            {energyUnit === 'kJ' ? `${b.totalEnergy} kJ` : `${Math.round(b.totalEnergy / 4.184)} kcal`}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
 
-            {/* 4. BIOPHYSICAL & STRUCTURAL DESCRIPTORS */}
+            {/* 5. ATOMIC RADII & STRUCTURAL DESCRIPTORS */}
             <div className="p-2.5 bg-gray-950/70 border border-gray-800 rounded-xl space-y-2">
               <div className="flex items-center gap-1.5 text-[11px] text-gray-400 font-medium">
                 <Atom className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Descriptores Estructurales & Biofísicos</span>
+                <span>Descriptores Estructurales</span>
               </div>
 
               <div className="grid grid-cols-2 gap-1.5 text-center font-mono tabular-nums">
@@ -261,51 +209,21 @@ export const MolecularPropertiesPanel: React.FC<MolecularPropertiesPanelProps> =
                   <div className="text-[9px] text-gray-500 uppercase">Área Polar TPSA</div>
                   <div className="text-xs font-semibold text-sky-300">{props.polarSurfaceAreaEstimate} Å²</div>
                 </div>
-                <div className="p-1.5 bg-gray-900/80 rounded-lg border border-gray-800/80">
-                  <div className="text-[9px] text-gray-500 uppercase">Donadores H (HBD)</div>
-                  <div className="text-xs font-semibold text-emerald-300">{props.hBondDonors}</div>
-                </div>
-                <div className="p-1.5 bg-gray-900/80 rounded-lg border border-gray-800/80">
-                  <div className="text-[9px] text-gray-500 uppercase">Aceptores H (HBA)</div>
-                  <div className="text-xs font-semibold text-indigo-300">{props.hBondAcceptors}</div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between text-[10px] text-gray-400 border-t border-gray-800/80 pt-1.5 font-mono tabular-nums">
-                <span>Enlaces Rotables:</span>
-                <span className="font-semibold text-gray-200">{props.rotatableBondsCount}</span>
               </div>
             </div>
 
-            {/* Functional groups summary if detected */}
-            {props.functionalGroups.length > 0 && (
-              <div className="pt-1">
-                <div className="text-[10px] text-gray-400 font-semibold mb-1">Grupos Funcionales Activos:</div>
-                <div className="flex flex-wrap gap-1">
-                  {props.functionalGroups.map((g, idx) => (
-                    <span
-                      key={idx}
-                      className="text-[10px] px-2 py-0.5 bg-sky-950/60 text-sky-300 border border-sky-800/50 rounded-md font-medium"
-                    >
-                      {g}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* 5. SELECTED ATOM DETAILS (if any) */}
+            {/* Selected Atom Details */}
             {selectedAtom && selectedElem && (
               <div className="p-2.5 bg-gray-950/70 border border-sky-900/50 rounded-xl space-y-1.5">
                 <div className="flex items-center justify-between text-[11px] font-semibold text-sky-400">
-                  <span>Átomo Seleccionado en VR:</span>
+                  <span>Átomo Seleccionado:</span>
                   <span className="font-mono font-bold text-gray-100">{selectedElem.name} ({selectedElem.symbol})</span>
                 </div>
                 <div className="text-[10px] text-gray-400 grid grid-cols-2 gap-1 font-mono tabular-nums">
-                  <div>Número Atómico: Z={selectedElem.atomicNumber}</div>
+                  <div>Radio Atómico: {selectedElem.atomicRadius} Å</div>
+                  <div>Radio VdW: {selectedElem.vdwRadius} Å</div>
                   <div>Electronegatividad: {selectedElem.electronegativity}</div>
-                  <div>Coord: ({selectedAtom.x.toFixed(1)}, {selectedAtom.y.toFixed(1)}, {selectedAtom.z.toFixed(1)})</div>
-                  <div>Config: {selectedElem.electronConfig}</div>
+                  <div>Ionización: {selectedElem.firstIonizationEnergy} eV</div>
                 </div>
               </div>
             )}

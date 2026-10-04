@@ -7,12 +7,16 @@ export const ELEMENTS: Record<string, ElementData> = {
     atomicNumber: 1,
     atomicMass: 1.008,
     cpkColor: '#FFFFFF',
+    atomicRadius: 0.53,
     covalentRadius: 0.31,
     vdwRadius: 1.2,
     maxBonds: 1,
-    electronegativity: 2.2,
+    electronegativity: 2.20,
     category: 'nonmetal',
-    electronConfig: '1s¹'
+    electronConfig: '1s¹',
+    firstIonizationEnergy: 13.598,
+    electronAffinity: 0.754,
+    polarizability: 0.667
   },
   He: {
     symbol: 'He',
@@ -20,12 +24,67 @@ export const ELEMENTS: Record<string, ElementData> = {
     atomicNumber: 2,
     atomicMass: 4.0026,
     cpkColor: '#D9FFFF',
+    atomicRadius: 0.31,
     covalentRadius: 0.28,
     vdwRadius: 1.4,
     maxBonds: 0,
     electronegativity: 0,
     category: 'noble-gas',
-    electronConfig: '1s²'
+    electronConfig: '1s²',
+    firstIonizationEnergy: 24.587,
+    electronAffinity: -0.5,
+    polarizability: 0.205
+  },
+  Li: {
+    symbol: 'Li',
+    name: 'Litio',
+    atomicNumber: 3,
+    atomicMass: 6.94,
+    cpkColor: '#CC80FF',
+    atomicRadius: 1.67,
+    covalentRadius: 1.28,
+    vdwRadius: 1.82,
+    maxBonds: 1,
+    electronegativity: 0.98,
+    category: 'alkali',
+    electronConfig: '[He] 2s¹',
+    firstIonizationEnergy: 5.392,
+    electronAffinity: 0.618,
+    polarizability: 24.3
+  },
+  Be: {
+    symbol: 'Be',
+    name: 'Berilio',
+    atomicNumber: 4,
+    atomicMass: 9.0122,
+    cpkColor: '#C2FF00',
+    atomicRadius: 1.12,
+    covalentRadius: 0.96,
+    vdwRadius: 1.53,
+    maxBonds: 2,
+    electronegativity: 1.57,
+    category: 'alkaline',
+    electronConfig: '[He] 2s²',
+    firstIonizationEnergy: 9.323,
+    electronAffinity: -0.5,
+    polarizability: 5.6
+  },
+  B: {
+    symbol: 'B',
+    name: 'Boro',
+    atomicNumber: 5,
+    atomicMass: 10.81,
+    cpkColor: '#FFB5B5',
+    atomicRadius: 0.87,
+    covalentRadius: 0.84,
+    vdwRadius: 1.92,
+    maxBonds: 3,
+    electronegativity: 2.04,
+    category: 'metalloid',
+    electronConfig: '[He] 2s² 2p¹',
+    firstIonizationEnergy: 8.298,
+    electronAffinity: 0.28,
+    polarizability: 3.03
   },
   C: {
     symbol: 'C',
@@ -33,12 +92,16 @@ export const ELEMENTS: Record<string, ElementData> = {
     atomicNumber: 6,
     atomicMass: 12.011,
     cpkColor: '#374151', // Dark graphite
+    atomicRadius: 0.67,
     covalentRadius: 0.76,
-    vdwRadius: 1.7,
+    vdwRadius: 1.70,
     maxBonds: 4,
     electronegativity: 2.55,
     category: 'nonmetal',
-    electronConfig: '[He] 2s² 2p²'
+    electronConfig: '[He] 2s² 2p²',
+    firstIonizationEnergy: 11.260,
+    electronAffinity: 1.262,
+    polarizability: 1.76
   },
   N: {
     symbol: 'N',
@@ -46,12 +109,16 @@ export const ELEMENTS: Record<string, ElementData> = {
     atomicNumber: 7,
     atomicMass: 14.007,
     cpkColor: '#2563EB', // Blue
+    atomicRadius: 0.56,
     covalentRadius: 0.71,
     vdwRadius: 1.55,
     maxBonds: 3,
     electronegativity: 3.04,
     category: 'nonmetal',
-    electronConfig: '[He] 2s² 2p³'
+    electronConfig: '[He] 2s² 2p³',
+    firstIonizationEnergy: 14.534,
+    electronAffinity: 0.07,
+    polarizability: 1.10
   },
   O: {
     symbol: 'O',
@@ -59,12 +126,16 @@ export const ELEMENTS: Record<string, ElementData> = {
     atomicNumber: 8,
     atomicMass: 15.999,
     cpkColor: '#EF4444', // Red
+    atomicRadius: 0.48,
     covalentRadius: 0.66,
     vdwRadius: 1.52,
     maxBonds: 2,
     electronegativity: 3.44,
     category: 'nonmetal',
-    electronConfig: '[He] 2s² 2p⁴'
+    electronConfig: '[He] 2s² 2p⁴',
+    firstIonizationEnergy: 13.618,
+    electronAffinity: 1.461,
+    polarizability: 0.802
   },
   F: {
     symbol: 'F',
@@ -72,12 +143,33 @@ export const ELEMENTS: Record<string, ElementData> = {
     atomicNumber: 9,
     atomicMass: 18.998,
     cpkColor: '#10B981', // Green
+    atomicRadius: 0.42,
     covalentRadius: 0.57,
     vdwRadius: 1.47,
     maxBonds: 1,
     electronegativity: 3.98,
     category: 'halogen',
-    electronConfig: '[He] 2s² 2p⁵'
+    electronConfig: '[He] 2s² 2p⁵',
+    firstIonizationEnergy: 17.423,
+    electronAffinity: 3.401,
+    polarizability: 0.557
+  },
+  Ne: {
+    symbol: 'Ne',
+    name: 'Neón',
+    atomicNumber: 10,
+    atomicMass: 20.180,
+    cpkColor: '#B3E5FC',
+    atomicRadius: 0.38,
+    covalentRadius: 0.58,
+    vdwRadius: 1.54,
+    maxBonds: 0,
+    electronegativity: 0,
+    category: 'noble-gas',
+    electronConfig: '[He] 2s² 2p⁶',
+    firstIonizationEnergy: 21.565,
+    electronAffinity: -0.6,
+    polarizability: 0.395
   },
   Na: {
     symbol: 'Na',
@@ -85,12 +177,16 @@ export const ELEMENTS: Record<string, ElementData> = {
     atomicNumber: 11,
     atomicMass: 22.99,
     cpkColor: '#8B5CF6', // Purple
+    atomicRadius: 1.90,
     covalentRadius: 1.66,
     vdwRadius: 2.27,
     maxBonds: 1,
     electronegativity: 0.93,
     category: 'alkali',
-    electronConfig: '[Ne] 3s¹'
+    electronConfig: '[Ne] 3s¹',
+    firstIonizationEnergy: 5.139,
+    electronAffinity: 0.548,
+    polarizability: 24.1
   },
   Mg: {
     symbol: 'Mg',
@@ -98,12 +194,16 @@ export const ELEMENTS: Record<string, ElementData> = {
     atomicNumber: 12,
     atomicMass: 24.305,
     cpkColor: '#059669',
+    atomicRadius: 1.45,
     covalentRadius: 1.41,
     vdwRadius: 1.73,
     maxBonds: 2,
     electronegativity: 1.31,
     category: 'alkaline',
-    electronConfig: '[Ne] 3s²'
+    electronConfig: '[Ne] 3s²',
+    firstIonizationEnergy: 7.646,
+    electronAffinity: -0.4,
+    polarizability: 10.6
   },
   P: {
     symbol: 'P',
@@ -111,12 +211,16 @@ export const ELEMENTS: Record<string, ElementData> = {
     atomicNumber: 15,
     atomicMass: 30.974,
     cpkColor: '#F97316', // Orange
+    atomicRadius: 0.98,
     covalentRadius: 1.07,
-    vdwRadius: 1.8,
+    vdwRadius: 1.80,
     maxBonds: 5,
     electronegativity: 2.19,
     category: 'nonmetal',
-    electronConfig: '[Ne] 3s² 3p³'
+    electronConfig: '[Ne] 3s² 3p³',
+    firstIonizationEnergy: 10.487,
+    electronAffinity: 0.746,
+    polarizability: 3.63
   },
   S: {
     symbol: 'S',
@@ -124,12 +228,16 @@ export const ELEMENTS: Record<string, ElementData> = {
     atomicNumber: 16,
     atomicMass: 32.06,
     cpkColor: '#EAB308', // Yellow
+    atomicRadius: 0.88,
     covalentRadius: 1.05,
-    vdwRadius: 1.8,
+    vdwRadius: 1.80,
     maxBonds: 6,
     electronegativity: 2.58,
     category: 'nonmetal',
-    electronConfig: '[Ne] 3s² 3p⁴'
+    electronConfig: '[Ne] 3s² 3p⁴',
+    firstIonizationEnergy: 10.360,
+    electronAffinity: 2.077,
+    polarizability: 2.90
   },
   Cl: {
     symbol: 'Cl',
@@ -137,12 +245,16 @@ export const ELEMENTS: Record<string, ElementData> = {
     atomicNumber: 17,
     atomicMass: 35.45,
     cpkColor: '#22C55E', // Light green
+    atomicRadius: 0.79,
     covalentRadius: 1.02,
     vdwRadius: 1.75,
     maxBonds: 1,
     electronegativity: 3.16,
     category: 'halogen',
-    electronConfig: '[Ne] 3s² 3p⁵'
+    electronConfig: '[Ne] 3s² 3p⁵',
+    firstIonizationEnergy: 12.968,
+    electronAffinity: 3.617,
+    polarizability: 2.18
   },
   K: {
     symbol: 'K',
@@ -150,12 +262,16 @@ export const ELEMENTS: Record<string, ElementData> = {
     atomicNumber: 19,
     atomicMass: 39.098,
     cpkColor: '#7C3AED',
+    atomicRadius: 2.43,
     covalentRadius: 2.03,
     vdwRadius: 2.75,
     maxBonds: 1,
     electronegativity: 0.82,
     category: 'alkali',
-    electronConfig: '[Ar] 4s¹'
+    electronConfig: '[Ar] 4s¹',
+    firstIonizationEnergy: 4.341,
+    electronAffinity: 0.501,
+    polarizability: 43.4
   },
   Ca: {
     symbol: 'Ca',
@@ -163,12 +279,16 @@ export const ELEMENTS: Record<string, ElementData> = {
     atomicNumber: 20,
     atomicMass: 40.078,
     cpkColor: '#6B7280',
+    atomicRadius: 1.94,
     covalentRadius: 1.76,
     vdwRadius: 2.31,
     maxBonds: 2,
-    electronegativity: 1.0,
+    electronegativity: 1.00,
     category: 'alkaline',
-    electronConfig: '[Ar] 4s²'
+    electronConfig: '[Ar] 4s²',
+    firstIonizationEnergy: 6.113,
+    electronAffinity: 0.02,
+    polarizability: 22.8
   },
   Fe: {
     symbol: 'Fe',
@@ -176,12 +296,16 @@ export const ELEMENTS: Record<string, ElementData> = {
     atomicNumber: 26,
     atomicMass: 55.845,
     cpkColor: '#D97706', // Rust orange
+    atomicRadius: 1.56,
     covalentRadius: 1.32,
-    vdwRadius: 2.0,
+    vdwRadius: 2.00,
     maxBonds: 6,
     electronegativity: 1.83,
     category: 'transition',
-    electronConfig: '[Ar] 3d⁶ 4s²'
+    electronConfig: '[Ar] 3d⁶ 4s²',
+    firstIonizationEnergy: 7.902,
+    electronAffinity: 0.151,
+    polarizability: 8.4
   },
   Cu: {
     symbol: 'Cu',
@@ -189,12 +313,16 @@ export const ELEMENTS: Record<string, ElementData> = {
     atomicNumber: 29,
     atomicMass: 63.546,
     cpkColor: '#C2410C',
+    atomicRadius: 1.45,
     covalentRadius: 1.22,
-    vdwRadius: 1.4,
+    vdwRadius: 1.40,
     maxBonds: 2,
-    electronegativity: 1.9,
+    electronegativity: 1.90,
     category: 'transition',
-    electronConfig: '[Ar] 3d¹⁰ 4s¹'
+    electronConfig: '[Ar] 3d¹⁰ 4s¹',
+    firstIonizationEnergy: 7.726,
+    electronAffinity: 1.228,
+    polarizability: 6.7
   },
   Br: {
     symbol: 'Br',
@@ -202,12 +330,16 @@ export const ELEMENTS: Record<string, ElementData> = {
     atomicNumber: 35,
     atomicMass: 79.904,
     cpkColor: '#991B1B', // Deep red
-    covalentRadius: 1.2,
+    atomicRadius: 0.94,
+    covalentRadius: 1.20,
     vdwRadius: 1.85,
     maxBonds: 1,
     electronegativity: 2.96,
     category: 'halogen',
-    electronConfig: '[Ar] 3d¹⁰ 4s² 4p⁵'
+    electronConfig: '[Ar] 3d¹⁰ 4s² 4p⁵',
+    firstIonizationEnergy: 11.814,
+    electronAffinity: 3.365,
+    polarizability: 3.05
   },
   I: {
     symbol: 'I',
@@ -215,12 +347,16 @@ export const ELEMENTS: Record<string, ElementData> = {
     atomicNumber: 53,
     atomicMass: 126.90,
     cpkColor: '#6B21A8', // Violet
+    atomicRadius: 1.15,
     covalentRadius: 1.39,
     vdwRadius: 1.98,
     maxBonds: 1,
     electronegativity: 2.66,
     category: 'halogen',
-    electronConfig: '[Kr] 4d¹⁰ 5s² 5p⁵'
+    electronConfig: '[Kr] 4d¹⁰ 5s² 5p⁵',
+    firstIonizationEnergy: 10.451,
+    electronAffinity: 3.059,
+    polarizability: 5.35
   },
   Au: {
     symbol: 'Au',
@@ -228,12 +364,16 @@ export const ELEMENTS: Record<string, ElementData> = {
     atomicNumber: 79,
     atomicMass: 196.97,
     cpkColor: '#F59E0B', // Gold
+    atomicRadius: 1.74,
     covalentRadius: 1.36,
     vdwRadius: 1.66,
     maxBonds: 4,
     electronegativity: 2.54,
     category: 'transition',
-    electronConfig: '[Xe] 4f¹⁴ 5d¹⁰ 6s¹'
+    electronConfig: '[Xe] 4f¹⁴ 5d¹⁰ 6s¹',
+    firstIonizationEnergy: 9.226,
+    electronAffinity: 2.309,
+    polarizability: 5.8
   }
 };
 
