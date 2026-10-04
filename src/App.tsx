@@ -21,6 +21,7 @@ import { MolecularPropertiesPanel } from './components/MolecularPropertiesPanel'
 import { PeriodicTableModal } from './components/PeriodicTableModal';
 import { VRGuideModal } from './components/VRGuideModal';
 import { QuantumAIPanel } from './components/QuantumAIPanel';
+import { ChemicalReactionsPanel } from './components/ChemicalReactionsPanel';
 import { ShieldAlert, AlertTriangle, CheckCircle2, AlertOctagon } from 'lucide-react';
 
 export default function App() {
@@ -46,6 +47,7 @@ export default function App() {
   const [showPropertiesPanel, setShowPropertiesPanel] = useState<boolean>(true);
   const [isPropertiesExpanded, setIsPropertiesExpanded] = useState<boolean>(true);
   const [showAIPanel, setShowAIPanel] = useState<boolean>(false);
+  const [isReactionsModalOpen, setIsReactionsModalOpen] = useState<boolean>(false);
 
   // 4. Quantum Mechanics, Orbitals & External Fields State
   const [selectedMolecularOrbital, setSelectedMolecularOrbital] = useState<MolecularOrbitalType>('HOMO');
@@ -362,6 +364,7 @@ export default function App() {
           onTogglePropertiesPanel={() => setShowPropertiesPanel(prev => !prev)}
           showAIPanel={showAIPanel}
           onToggleAIPanel={() => setShowAIPanel(prev => !prev)}
+          onOpenReactionsModal={() => setIsReactionsModalOpen(true)}
         />
       )}
 
@@ -467,7 +470,18 @@ export default function App() {
         />
       )}
 
-      {/* 7. MATTER LAB & QUANTUM CONTROLS */}
+      {/* 7. CHEMICAL REACTIONS SIMULATOR MODAL */}
+      <ChemicalReactionsPanel
+        isOpen={isReactionsModalOpen}
+        onClose={() => setIsReactionsModalOpen(false)}
+        onLoadReactionMolecule={(rxnMolecule) => {
+          setMolecule(JSON.parse(JSON.stringify(rxnMolecule)));
+          setSelectedAtomId(null);
+          setIsRelaxing(true);
+        }}
+      />
+
+      {/* 8. MATTER LAB & QUANTUM CONTROLS */}
       {vrMode !== 'cardboard' && (
         <div className="mt-14">
           <MatterLabPanel
@@ -492,7 +506,7 @@ export default function App() {
         </div>
       )}
 
-      {/* 8. VR CONTROLS & CARDBOARD OVERLAY */}
+      {/* 9. VR CONTROLS & CARDBOARD OVERLAY */}
       <VRControlsOverlay
         vrMode={vrMode}
         onChangeVRMode={setVRMode}
@@ -510,7 +524,7 @@ export default function App() {
         gazeProgress={gazeProgress}
       />
 
-      {/* 9. MODALS */}
+      {/* 10. MODALS */}
       <PeriodicTableModal
         isOpen={isPeriodicTableOpen}
         onClose={() => setIsPeriodicTableOpen(false)}

@@ -102,3 +102,23 @@ export interface QuantumAIState {
   predictedDipole: number; // in Debye
   modelStatus: 'untrained' | 'training' | 'trained';
 }
+
+// Chemical Reaction Data Types
+export interface ChemicalReactionStep {
+  stepName: string;
+  description: string;
+  molecule: Molecule3D; // 3D Molecular snapshot for this step
+  energyKcal: number; // Relative potential energy along reaction coordinate
+}
+
+export interface ChemicalReaction {
+  id: string;
+  title: string;
+  equation: string; // e.g. "CH4 + 2 O2 -> CO2 + 2 H2O"
+  type: 'Combustión' | 'Síntesis / Adición' | 'S_N2 Sustitución' | 'Neutralización Ácido-Base' | 'Óxido-Reducción';
+  description: string;
+  activationEnergyKcal: number; // E_a
+  enthalpyKcal: number; // Delta H
+  isExothermic: boolean;
+  steps: ChemicalReactionStep[]; // Reactants -> Transition State -> Products
+}

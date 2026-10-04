@@ -1,7 +1,7 @@
 import React from 'react';
 import { ZoomLevel, VRMode } from '../types/chemistry';
 import { sounds } from '../utils/audio';
-import { Glasses, Activity, BrainCircuit } from 'lucide-react';
+import { Glasses, Activity, BrainCircuit, Flame } from 'lucide-react';
 
 interface TopBarProps {
   zoomLevel: ZoomLevel;
@@ -14,6 +14,7 @@ interface TopBarProps {
   onTogglePropertiesPanel: () => void;
   showAIPanel: boolean;
   onToggleAIPanel: () => void;
+  onOpenReactionsModal: () => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -26,7 +27,8 @@ export const TopBar: React.FC<TopBarProps> = ({
   showPropertiesPanel,
   onTogglePropertiesPanel,
   showAIPanel,
-  onToggleAIPanel
+  onToggleAIPanel,
+  onOpenReactionsModal
 }) => {
   return (
     <header className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-6 py-3.5 bg-gray-950/80 backdrop-blur-md border-b border-gray-800/80 pointer-events-auto">
@@ -56,6 +58,16 @@ export const TopBar: React.FC<TopBarProps> = ({
         <button
           onClick={() => {
             sounds.playClick();
+            onOpenReactionsModal();
+          }}
+          className="hover:text-amber-300 transition-colors text-amber-400 font-semibold flex items-center gap-1.5"
+        >
+          <Flame className="w-4 h-4 text-amber-400 animate-pulse" />
+          <span>Reacciones Químicas</span>
+        </button>
+        <button
+          onClick={() => {
+            sounds.playClick();
             onChangeZoomLevel('atomic');
           }}
           className={`hover:text-white transition-colors ${zoomLevel === 'atomic' ? 'text-sky-400 font-semibold' : ''}`}
@@ -70,15 +82,6 @@ export const TopBar: React.FC<TopBarProps> = ({
           className={`hover:text-white transition-colors ${zoomLevel === 'quantum' ? 'text-indigo-400 font-semibold' : ''}`}
         >
           Creador de Materia
-        </button>
-        <button
-          onClick={() => {
-            sounds.playClick();
-            onOpenHelp();
-          }}
-          className="hover:text-white transition-colors text-gray-400"
-        >
-          Guía Android VR
         </button>
       </nav>
 
