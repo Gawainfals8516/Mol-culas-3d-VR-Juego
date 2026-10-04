@@ -1,7 +1,7 @@
 import React from 'react';
 import { ZoomLevel, VRMode } from '../types/chemistry';
 import { sounds } from '../utils/audio';
-import { Glasses, Activity } from 'lucide-react';
+import { Glasses, Activity, BrainCircuit } from 'lucide-react';
 
 interface TopBarProps {
   zoomLevel: ZoomLevel;
@@ -12,6 +12,8 @@ interface TopBarProps {
   onOpenHelp: () => void;
   showPropertiesPanel: boolean;
   onTogglePropertiesPanel: () => void;
+  showAIPanel: boolean;
+  onToggleAIPanel: () => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -22,11 +24,13 @@ export const TopBar: React.FC<TopBarProps> = ({
   formula,
   onOpenHelp,
   showPropertiesPanel,
-  onTogglePropertiesPanel
+  onTogglePropertiesPanel,
+  showAIPanel,
+  onToggleAIPanel
 }) => {
   return (
     <header className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-6 py-3.5 bg-gray-950/80 backdrop-blur-md border-b border-gray-800/80 pointer-events-auto">
-      {/* Zone 1: Single text element wordmark */}
+      {/* Zone 1: Title & Chemical Formula */}
       <div className="flex items-center gap-3">
         <span className="text-lg font-bold tracking-tight text-white font-sans">
           QuantumVR <span className="text-sky-400 font-mono font-normal">ChemLab</span>
@@ -38,7 +42,7 @@ export const TopBar: React.FC<TopBarProps> = ({
         )}
       </div>
 
-      {/* Zone 2: 4-6 clean text navigation links */}
+      {/* Zone 2: Navigation Links */}
       <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-gray-400">
         <button
           onClick={() => {
@@ -78,8 +82,23 @@ export const TopBar: React.FC<TopBarProps> = ({
         </button>
       </nav>
 
-      {/* Zone 3: 1-2 primary actions */}
+      {/* Zone 3: Primary Actions */}
       <div className="flex items-center gap-2.5">
+        <button
+          onClick={() => {
+            sounds.playClick();
+            onToggleAIPanel();
+          }}
+          className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+            showAIPanel
+              ? 'bg-indigo-950/80 border-indigo-600 text-indigo-300 shadow-sm'
+              : 'bg-gray-900 border-gray-800 text-gray-400 hover:text-gray-200 hover:bg-gray-800'
+          }`}
+        >
+          <BrainCircuit className="w-3.5 h-3.5 text-indigo-400" />
+          <span>IA Cuántica</span>
+        </button>
+
         <button
           onClick={() => {
             sounds.playClick();
@@ -110,4 +129,3 @@ export const TopBar: React.FC<TopBarProps> = ({
     </header>
   );
 };
-

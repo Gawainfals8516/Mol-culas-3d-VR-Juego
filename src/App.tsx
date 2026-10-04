@@ -4,10 +4,11 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Atom3D, Bond3D, Molecule3D, ViewMode, VRMode, ZoomLevel } from './types/chemistry';
+import { Atom3D, Bond3D, ExternalFieldsConfig, MolecularOrbitalType, Molecule3D, ViewMode, VRMode, ZoomLevel } from './types/chemistry';
 import { PRESET_MOLECULES } from './data/molecules';
 import { ELEMENTS } from './data/elements';
-import { relaxMoleculeStep, calculateChemicalFormula } from './utils/vsepr';
+import { calculateChemicalFormula } from './utils/vsepr';
+import { relaxMoleculeQuantumStep } from './utils/quantumEngine';
 import { sounds } from './utils/audio';
 
 import { VRCanvas } from './components/VRCanvas';
@@ -18,10 +19,11 @@ import { VRControlsOverlay } from './components/VRControlsOverlay';
 import { MolecularPropertiesPanel } from './components/MolecularPropertiesPanel';
 import { PeriodicTableModal } from './components/PeriodicTableModal';
 import { VRGuideModal } from './components/VRGuideModal';
+import { QuantumAIPanel } from './components/QuantumAIPanel';
 
 export default function App() {
   // 1. Core Molecular State
-  const [molecule, setMolecule] = useState<Molecule3D>(PRESET_MOLECULES[2]); // Start with Caffeine
+  const [molecule, setMolecule] = useState<Molecule3D>(PRESET_MOLECULES[2]); // Start with Ethanol
   const [selectedAtomId, setSelectedAtomId] = useState<string | null>(null);
   const [selectedElement, setSelectedElement] = useState<string>('C');
   const [activeBondOrder, setActiveBondOrder] = useState<1 | 2 | 3 | 0.5>(1);
@@ -35,21 +37,32 @@ export default function App() {
   const [gazeProgress, setGazeProgress] = useState<number>(0);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
 
-  // 3. Properties Panel State
+  // 3. Properties & AI Panel State
   const [showPropertiesPanel, setShowPropertiesPanel] = useState<boolean>(true);
   const [isPropertiesExpanded, setIsPropertiesExpanded] = useState<boolean>(true);
+  const [showAIPanel, setShowAIPanel] = useState<boolean>(false);
 
-  // 4. Quantum Field & Matter Genesis State
+  // 4. Quantum Mechanics, Orbitals & External Fields State
+  const [selectedMolecularOrbital, setSelectedMolecularOrbital] = useState<MolecularOrbitalType>('HOMO');
+  const [showMolecularOrbital, setShowMolecularOrbital] = useState<boolean>(false);
+  const [showIntermolecularForces, setShowIntermolecularForces] = useState<boolean>(true);
+  const [externalFields, setExternalFields] = useState<ExternalFieldsConfig>({
+    electricField: [0, 0, 0],
+    magneticField: [0, 0, 0],
+    temperatureK: 298.15
+  });
+
+  // 5. Quantum Field & Matter Genesis State
   const [quantumParticlesCount, setQuantumParticlesCount] = useState<number>(24);
   const [higgsFieldStrength, setHiggsFieldStrength] = useState<number>(0.65);
   const [activeOrbital, setActiveOrbital] = useState<string>('2p');
   const [matterCreatedCount, setMatterCreatedCount] = useState<number>(0);
 
-  // 5. Modals
+  // 6. Modals
   const [isPeriodicTableOpen, setIsPeriodicTableOpen] = useState<boolean>(false);
   const [isVRGuideOpen, setIsVRGuideOpen] = useState<boolean>(false);
 
-  // Real-time VSEPR relaxation loop when modifying structure
+  // Real-time Quantum VSEPR & Field Relaxation Loop
   const [isRelaxing, setIsRelaxing] = useState<boolean>(false);
 
   useEffect(() => {
@@ -60,7 +73,7 @@ export default function App() {
     const relaxLoop = () => {
       setMolecule(prev => ({
         ...prev,
-        atoms: relaxMoleculeStep(prev.atoms, prev.bonds, null, 0.75)
+        atoms: relaxMoleculeQuantumStep(prev.atoms, prev.bonds, externalFields, null, 0.75)
       }));
       count++;
       if (count < 45) {
@@ -72,9 +85,9 @@ export default function App() {
 
     frameId = requestAnimationFrame(relaxLoop);
     return () => cancelAnimationFrame(frameId);
-  }, [isRelaxing]);
+  }, [isRelaxing, externalFields]);
 
-  // Handle atom selection or bonding between 2 atoms (ChemDraw style!)
+  // Handle atom selection or bonding between 2 atoms (ChemDraw style)
   const handleSelectAtom = useCallback((clickedId: string | null) => {
     if (!clickedId) {
       setSelectedAtomId(null);
@@ -185,7 +198,7 @@ export default function App() {
     // Gentle real-time spring relaxation while dragging
     setMolecule(prev => ({
       ...prev,
-      atoms: relaxMoleculeStep(prev.atoms, prev.bonds, id, 0.4)
+      atoms: relaxMoleculeQuantumStep(prev.atoms, prev.bonds, externalFields, id, 0.4)
     }));
   };
 
@@ -296,7 +309,7 @@ export default function App() {
 
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-gray-950 font-sans text-gray-100 select-none">
-      {/* 1. TOP BAR (Only visible in normal/gyro mode, hidden during Cardboard VR for complete immersion) */}
+      {/* 1. TOP BAR */}
       {vrMode !== 'cardboard' && (
         <TopBar
           zoomLevel={zoomLevel}
@@ -307,6 +320,8 @@ export default function App() {
           onOpenHelp={() => setIsVRGuideOpen(true)}
           showPropertiesPanel={showPropertiesPanel}
           onTogglePropertiesPanel={() => setShowPropertiesPanel(prev => !prev)}
+          showAIPanel={showAIPanel}
+          onToggleAIPanel={() => setShowAIPanel(prev => !prev)}
         />
       )}
 
@@ -322,7 +337,11 @@ export default function App() {
         quantumParticlesCount={quantumParticlesCount}
         higgsFieldStrength={higgsFieldStrength}
         activeOrbital={activeOrbital}
+        selectedMolecularOrbital={selectedMolecularOrbital}
+        showMolecularOrbital={showMolecularOrbital}
         showDipole={showDipole}
+        showIntermolecularForces={showIntermolecularForces}
+        externalFields={externalFields}
         ipd={ipd}
         onGazeProgress={setGazeProgress}
         onVRAction={() => {
@@ -334,7 +353,7 @@ export default function App() {
         }}
       />
 
-      {/* 3. CHEMDRAW TOOLBAR & MOLECULAR PROPERTIES (visible when in molecular/macro zoom and not in Cardboard VR) */}
+      {/* 3. CHEMDRAW TOOLBAR & MOLECULAR PROPERTIES */}
       {vrMode !== 'cardboard' && (zoomLevel === 'molecular' || zoomLevel === 'macro') && (
         <>
           <div className="mt-14">
@@ -358,6 +377,7 @@ export default function App() {
             <MolecularPropertiesPanel
               molecule={molecule}
               selectedAtomId={selectedAtomId}
+              externalFields={externalFields}
               isOpen={isPropertiesExpanded}
               onToggleOpen={() => setIsPropertiesExpanded(prev => !prev)}
             />
@@ -365,7 +385,16 @@ export default function App() {
         </>
       )}
 
-      {/* 4. MATTER LAB & QUANTUM CONTROLS (visible in all non-cardboard modes) */}
+      {/* 4. QUANTUM AI PANEL */}
+      {vrMode !== 'cardboard' && showAIPanel && (
+        <QuantumAIPanel
+          molecule={molecule}
+          isOpen={showAIPanel}
+          onClose={() => setShowAIPanel(false)}
+        />
+      )}
+
+      {/* 5. MATTER LAB & QUANTUM CONTROLS */}
       {vrMode !== 'cardboard' && (
         <div className="mt-14">
           <MatterLabPanel
@@ -373,6 +402,14 @@ export default function App() {
             onChangeZoomLevel={setZoomLevel}
             activeOrbital={activeOrbital}
             onChangeOrbital={setActiveOrbital}
+            selectedMolecularOrbital={selectedMolecularOrbital}
+            onChangeMolecularOrbital={setSelectedMolecularOrbital}
+            showMolecularOrbital={showMolecularOrbital}
+            onToggleMolecularOrbital={() => setShowMolecularOrbital(prev => !prev)}
+            showIntermolecularForces={showIntermolecularForces}
+            onToggleIntermolecularForces={() => setShowIntermolecularForces(prev => !prev)}
+            externalFields={externalFields}
+            onChangeExternalFields={setExternalFields}
             higgsFieldStrength={higgsFieldStrength}
             onChangeHiggsStrength={setHiggsFieldStrength}
             onInjectEnergy={handleInjectEnergy}
@@ -382,7 +419,7 @@ export default function App() {
         </div>
       )}
 
-      {/* 5. VR CONTROLS & CARDBOARD OVERLAY */}
+      {/* 6. VR CONTROLS & CARDBOARD OVERLAY */}
       <VRControlsOverlay
         vrMode={vrMode}
         onChangeVRMode={setVRMode}
@@ -400,7 +437,7 @@ export default function App() {
         gazeProgress={gazeProgress}
       />
 
-      {/* 6. MODALS */}
+      {/* 7. MODALS */}
       <PeriodicTableModal
         isOpen={isPeriodicTableOpen}
         onClose={() => setIsPeriodicTableOpen(false)}

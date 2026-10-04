@@ -1,5 +1,5 @@
 import React from 'react';
-import { ZoomLevel } from '../types/chemistry';
+import { ExternalFieldsConfig, MolecularOrbitalType, ZoomLevel } from '../types/chemistry';
 import { sounds } from '../utils/audio';
 import { 
   Zap, 
@@ -7,7 +7,10 @@ import {
   Atom, 
   Waves, 
   Flame, 
-  Sparkle
+  Sparkles,
+  Compass,
+  Sliders,
+  Eye
 } from 'lucide-react';
 
 interface MatterLabPanelProps {
@@ -15,6 +18,14 @@ interface MatterLabPanelProps {
   onChangeZoomLevel: (zoom: ZoomLevel) => void;
   activeOrbital: string;
   onChangeOrbital: (orbital: string) => void;
+  selectedMolecularOrbital: MolecularOrbitalType;
+  onChangeMolecularOrbital: (mo: MolecularOrbitalType) => void;
+  showMolecularOrbital: boolean;
+  onToggleMolecularOrbital: () => void;
+  showIntermolecularForces: boolean;
+  onToggleIntermolecularForces: () => void;
+  externalFields: ExternalFieldsConfig;
+  onChangeExternalFields: (fields: ExternalFieldsConfig) => void;
   higgsFieldStrength: number;
   onChangeHiggsStrength: (val: number) => void;
   onInjectEnergy: () => void;
@@ -27,6 +38,14 @@ export const MatterLabPanel: React.FC<MatterLabPanelProps> = ({
   onChangeZoomLevel,
   activeOrbital,
   onChangeOrbital,
+  selectedMolecularOrbital,
+  onChangeMolecularOrbital,
+  showMolecularOrbital,
+  onToggleMolecularOrbital,
+  showIntermolecularForces,
+  onToggleIntermolecularForces,
+  externalFields,
+  onChangeExternalFields,
   higgsFieldStrength,
   onChangeHiggsStrength,
   onInjectEnergy,
@@ -83,7 +102,130 @@ export const MatterLabPanel: React.FC<MatterLabPanelProps> = ({
         </div>
       </div>
 
-      {/* Mode A: Atomic Orbitals Exploration (when zoom === 'atomic') */}
+      {/* Molecular Orbitals & External Fields (Molecular or Macro scale) */}
+      {(zoomLevel === 'molecular' || zoomLevel === 'macro') && (
+        <div className="p-3 bg-gray-900/90 backdrop-blur-md border border-gray-800 rounded-xl shadow-xl space-y-2.5">
+          <div className="flex items-center justify-between text-xs font-semibold text-sky-400">
+            <span className="flex items-center gap-1.5">
+              <Eye className="w-4 h-4 text-indigo-400" />
+              Orbitales Moleculares (LCAO)
+            </span>
+            <button
+              onClick={() => {
+                sounds.playClick();
+                onToggleMolecularOrbital();
+              }}
+              className={`px-2 py-0.5 text-[10px] font-semibold rounded border transition-colors ${
+                showMolecularOrbital
+                  ? 'bg-indigo-600 text-white border-indigo-400'
+                  : 'bg-gray-800 text-gray-400 border-gray-700 hover:text-gray-200'
+              }`}
+            >
+              {showMolecularOrbital ? 'Ocultar' : 'Ver MO'}
+            </button>
+          </div>
+
+          {showMolecularOrbital && (
+            <div className="grid grid-cols-2 gap-1 pt-1">
+              {[
+                { id: 'HOMO', label: 'HOMO' },
+                { id: 'LUMO', label: 'LUMO' },
+                { id: 'sigma-bonding', label: 'Sigma σ' },
+                { id: 'pi-bonding', label: 'Pi π' }
+              ].map(mo => (
+                <button
+                  key={mo.id}
+                  onClick={() => {
+                    sounds.playBond();
+                    onChangeMolecularOrbital(mo.id as MolecularOrbitalType);
+                  }}
+                  className={`py-1 px-2 text-[10px] font-bold rounded border transition-colors ${
+                    selectedMolecularOrbital === mo.id
+                      ? 'bg-indigo-950 border-indigo-500 text-indigo-200'
+                      : 'bg-gray-950/60 border-gray-800 text-gray-400 hover:text-gray-200'
+                  }`}
+                >
+                  {mo.label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* External Electric / Magnetic Field Sliders */}
+          <div className="border-t border-gray-800/80 pt-2 space-y-2">
+            <div className="flex items-center justify-between text-[11px] font-semibold text-amber-400">
+              <span className="flex items-center gap-1">
+                <Compass className="w-3.5 h-3.5" />
+                Campos Exteriores (Stark / Zeeman)
+              </span>
+            </div>
+
+            <div className="space-y-1 text-[10px]">
+              <div className="flex justify-between text-gray-300">
+                <span>Campo Eléctrico E_z:</span>
+                <span className="font-mono text-amber-300">{externalFields.electricField[2]} kV/cm</span>
+              </div>
+              <input
+                type="range"
+                min="-10"
+                max="10"
+                step="1"
+                value={externalFields.electricField[2]}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value);
+                  onChangeExternalFields({
+                    ...externalFields,
+                    electricField: [0, 0, val]
+                  });
+                }}
+                className="w-full h-1 bg-gray-800 rounded appearance-none cursor-pointer accent-amber-500"
+              />
+            </div>
+
+            <div className="space-y-1 text-[10px]">
+              <div className="flex justify-between text-gray-300">
+                <span>Campo Magnético B_z:</span>
+                <span className="font-mono text-emerald-400">{externalFields.magneticField[2]} Tesla</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="5"
+                step="0.5"
+                value={externalFields.magneticField[2]}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value);
+                  onChangeExternalFields({
+                    ...externalFields,
+                    magneticField: [0, 0, val]
+                  });
+                }}
+                className="w-full h-1 bg-gray-800 rounded appearance-none cursor-pointer accent-emerald-500"
+              />
+            </div>
+          </div>
+
+          {/* Intermolecular Forces Toggle */}
+          <div className="border-t border-gray-800/80 pt-2 flex items-center justify-between">
+            <span className="text-[11px] text-gray-300">Fuerzas Intermoleculares:</span>
+            <button
+              onClick={() => {
+                sounds.playClick();
+                onToggleIntermolecularForces();
+              }}
+              className={`px-2 py-0.5 text-[10px] font-semibold rounded border transition-colors ${
+                showIntermolecularForces
+                  ? 'bg-emerald-950 border-emerald-500 text-emerald-300'
+                  : 'bg-gray-950 border-gray-800 text-gray-400 hover:text-gray-200'
+              }`}
+            >
+              {showIntermolecularForces ? 'Visibles' : 'Ocultas'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Atomic Orbitals Exploration (when zoom === 'atomic') */}
       {zoomLevel === 'atomic' && (
         <div className="p-3 bg-gray-900/90 backdrop-blur-md border border-gray-800 rounded-xl shadow-xl space-y-2.5 animate-in fade-in duration-200">
           <div className="flex items-center gap-2 text-xs font-semibold text-sky-400">
@@ -127,7 +269,7 @@ export const MatterLabPanel: React.FC<MatterLabPanelProps> = ({
         </div>
       )}
 
-      {/* Mode B: Quantum Fields & Matter Genesis (when zoom === 'quantum') */}
+      {/* Quantum Fields & Matter Genesis (when zoom === 'quantum') */}
       {zoomLevel === 'quantum' && (
         <div className="p-3 bg-gray-900/90 backdrop-blur-md border border-indigo-900/50 rounded-xl shadow-xl space-y-3 animate-in fade-in duration-200">
           <div className="flex items-center justify-between text-xs font-semibold text-indigo-400">
@@ -189,25 +331,12 @@ export const MatterLabPanel: React.FC<MatterLabPanelProps> = ({
           {matterCreatedCount > 0 && (
             <div className="flex items-center justify-between p-2 bg-indigo-950/60 border border-indigo-800/40 rounded-lg text-xs">
               <div className="flex items-center gap-1.5 text-indigo-300">
-                <Sparkle className="w-3.5 h-3.5 text-amber-400" />
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                 <span>Partículas Creadas:</span>
               </div>
               <span className="font-mono font-bold text-amber-300">{matterCreatedCount}</span>
             </div>
           )}
-        </div>
-      )}
-
-      {/* Mode C: Molecular Information HUD (when zoom === 'macro' or 'molecular') */}
-      {(zoomLevel === 'macro' || zoomLevel === 'molecular') && (
-        <div className="p-3 bg-gray-900/90 backdrop-blur-md border border-gray-800 rounded-xl shadow-xl space-y-2 text-xs">
-          <div className="flex items-center gap-2 font-semibold text-sky-400">
-            <Flame className="w-4 h-4 text-rose-400" />
-            <span>Fuerzas & Enlaces Moleculares</span>
-          </div>
-          <p className="text-[11px] text-gray-400 leading-relaxed">
-            Las nubes electrónicas compartidas forman enlaces covalentes que minimizan la energía potencial electrostática según el principio de exclusión de Pauli.
-          </p>
         </div>
       )}
     </div>
