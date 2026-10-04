@@ -2,6 +2,213 @@ import { ChemicalReaction } from '../types/chemistry';
 
 export const CHEMICAL_REACTIONS: ChemicalReaction[] = [
   {
+    id: 'diels_alder_cycloaddition',
+    title: 'Cicloadición Diels-Alder [4+2] (Butadieno + Etileno ⟶ Ciclohexeno)',
+    equation: 'C₄H₆ + C₂H₄ ⟶ C₆H₁₀',
+    type: 'Síntesis / Adición',
+    description: 'Reacción pericíclica concertada permitida por simetría de orbitales moleculares (Woodward-Hoffmann). Solapamiento frontal HOMO del dieno con LUMO del dienófilo.',
+    activationEnergyKcal: 25.0,
+    enthalpyKcal: -40.0,
+    isExothermic: true,
+    steps: [
+      {
+        stepName: '1. Reactivos: Dieno s-cis (1,3-Butadieno) + Dienófilo (Etileno)',
+        description: 'Aproximación paralela del dieno conjugado y el dienófilo a una distancia crítica de 2.8 Å.',
+        energyKcal: 0,
+        activeIons: ['Solapamiento HOMO-LUMO Pericíclico'],
+        molecule: {
+          id: 'da_reactants',
+          name: 'Reactivos Diels-Alder',
+          formula: 'C₄H₆ + C₂H₄',
+          category: 'Pericíclica',
+          description: 'Aproximación supra-suprafacial.',
+          atoms: [
+            // Butadiene (s-cis)
+            { id: 'c1', symbol: 'C', x: -1.3, y: 1.2, z: 0 },
+            { id: 'c2', symbol: 'C', x: -0.6, y: 0, z: 0 },
+            { id: 'c3', symbol: 'C', x: 0.6, y: 0, z: 0 },
+            { id: 'c4', symbol: 'C', x: 1.3, y: 1.2, z: 0 },
+            // Ethylene
+            { id: 'c5', symbol: 'C', x: -0.7, y: 1.8, z: 1.6 },
+            { id: 'c6', symbol: 'C', x: 0.7, y: 1.8, z: 1.6 },
+            // Hydrogens
+            { id: 'h1', symbol: 'H', x: -2.3, y: 1.3, z: 0 },
+            { id: 'h2', symbol: 'H', x: 2.3, y: 1.3, z: 0 }
+          ],
+          bonds: [
+            { id: 'b1', atom1Id: 'c1', atom2Id: 'c2', order: 2 },
+            { id: 'b2', atom1Id: 'c2', atom2Id: 'c3', order: 1 },
+            { id: 'b3', atom1Id: 'c3', atom2Id: 'c4', order: 2 },
+            { id: 'b4', atom1Id: 'c5', atom2Id: 'c6', order: 2 },
+            { id: 'b5', atom1Id: 'c1', atom2Id: 'h1', order: 1 },
+            { id: 'b6', atom1Id: 'c4', atom2Id: 'h2', order: 1 }
+          ]
+        }
+      },
+      {
+        stepName: '2. Estado de Transición Cíclico de 6 Electrones [C₆H₁₀]‡',
+        description: 'Anillo aromático de estado de transición con 6 electrones pi deslocalizados. Formación simultánea de 2 enlaces sigma C-C.',
+        energyKcal: 25.0,
+        activeIons: ['Estado de Transición Aromaticidad Hückel (6e⁻ π)'],
+        molecule: {
+          id: 'da_ts',
+          name: 'Estado de Transición Cíclico ‡',
+          formula: '[C₆H₁₀]‡',
+          category: 'Estado Activado Cíclico',
+          description: 'Flujo cíclico continuo de electrones.',
+          atoms: [
+            { id: 'c1', symbol: 'C', x: -1.2, y: 0.8, z: 0.3 },
+            { id: 'c2', symbol: 'C', x: -0.7, y: -0.4, z: 0 },
+            { id: 'c3', symbol: 'C', x: 0.7, y: -0.4, z: 0 },
+            { id: 'c4', symbol: 'C', x: 1.2, y: 0.8, z: 0.3 },
+            { id: 'c5', symbol: 'C', x: -0.7, y: 1.1, z: 1.2 },
+            { id: 'c6', symbol: 'C', x: 0.7, y: 1.1, z: 1.2 },
+            { id: 'h1', symbol: 'H', x: -2.1, y: 1.0, z: 0.3 },
+            { id: 'h2', symbol: 'H', x: 2.1, y: 1.0, z: 0.3 }
+          ],
+          bonds: [
+            { id: 'b1', atom1Id: 'c1', atom2Id: 'c2', order: 1.5 },
+            { id: 'b2', atom1Id: 'c2', atom2Id: 'c3', order: 1.5 },
+            { id: 'b3', atom1Id: 'c3', atom2Id: 'c4', order: 1.5 },
+            { id: 'b4', atom1Id: 'c4', atom2Id: 'c6', order: 0.5 },
+            { id: 'b5', atom1Id: 'c6', atom2Id: 'c5', order: 1.5 },
+            { id: 'b6', atom1Id: 'c5', atom2Id: 'c1', order: 0.5 },
+            { id: 'bh1', atom1Id: 'c1', atom2Id: 'h1', order: 1 },
+            { id: 'bh2', atom1Id: 'c4', atom2Id: 'h2', order: 1 }
+          ]
+        }
+      },
+      {
+        stepName: '3. Producto Estable: Ciclohexeno (Anillo de 6 Miembros)',
+        description: 'Formación de 2 nuevos enlaces sigma C-C fuertemente estables y un enlace doble C=C residual en el anillo.',
+        energyKcal: -40.0,
+        activeIons: ['Anillo Ciclohexeno Estabilizado'],
+        molecule: {
+          id: 'da_product',
+          name: 'Ciclohexeno',
+          formula: 'C₆H₁₀',
+          category: 'Alqueno Cíclico',
+          description: 'Anillo de 6 miembros estabilizado.',
+          atoms: [
+            { id: 'c1', symbol: 'C', x: -1.2, y: 0.7, z: 0.5 },
+            { id: 'c2', symbol: 'C', x: -0.7, y: -0.6, z: 0 },
+            { id: 'c3', symbol: 'C', x: 0.7, y: -0.6, z: 0 },
+            { id: 'c4', symbol: 'C', x: 1.2, y: 0.7, z: 0.5 },
+            { id: 'c5', symbol: 'C', x: -0.6, y: 1.2, z: 1.3 },
+            { id: 'c6', symbol: 'C', x: 0.6, y: 1.2, z: 1.3 },
+            { id: 'h1', symbol: 'H', x: -2.1, y: 0.9, z: 0.5 },
+            { id: 'h2', symbol: 'H', x: 2.1, y: 0.9, z: 0.5 }
+          ],
+          bonds: [
+            { id: 'b1', atom1Id: 'c1', atom2Id: 'c2', order: 1 },
+            { id: 'b2', atom1Id: 'c2', atom2Id: 'c3', order: 2 }, // Double bond
+            { id: 'b3', atom1Id: 'c3', atom2Id: 'c4', order: 1 },
+            { id: 'b4', atom1Id: 'c4', atom2Id: 'c6', order: 1 },
+            { id: 'b5', atom1Id: 'c6', atom2Id: 'c5', order: 1 },
+            { id: 'b6', atom1Id: 'c5', atom2Id: 'c1', order: 1 },
+            { id: 'bh1', atom1Id: 'c1', atom2Id: 'h1', order: 1 },
+            { id: 'bh2', atom1Id: 'c4', atom2Id: 'h2', order: 1 }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    id: 'keto_enol_tautomerism',
+    title: 'Tautomería Ceto-Enol (Acetona Ceto ⇌ Enol Estabilizado)',
+    equation: 'CH₃-CO-CH₃ ⇌ CH₂=C(OH)-CH₃',
+    type: 'Síntesis / Adición',
+    description: 'Equilibrio prototrópico intramolecular donde un protón H⁺ migra entre el carbono alfa y el oxígeno del grupo carbonilo.',
+    activationEnergyKcal: 15.2,
+    enthalpyKcal: 10.5,
+    isExothermic: false,
+    steps: [
+      {
+        stepName: '1. Tautómero Ceto (Acetona Termodinámicamente Mayoritaria 99.9%)',
+        description: 'Grupo carbonilo C=O de alta energía de enlace (179 kcal/mol) con hidrógenos alfa hiperconjugados.',
+        energyKcal: 0,
+        activeIons: ['Estructura Ceto Principal'],
+        molecule: {
+          id: 'keto_form',
+          name: 'Acetona Ceto',
+          formula: 'CH₃-CO-CH₃',
+          category: 'Cetona',
+          description: 'Tautómero más estable.',
+          atoms: [
+            { id: 'c1', symbol: 'C', x: 0, y: 0, z: 0 },
+            { id: 'o1', symbol: 'O', x: 0, y: 1.2, z: 0 },
+            { id: 'c2', symbol: 'C', x: -1.3, y: -0.7, z: 0 },
+            { id: 'c3', symbol: 'C', x: 1.3, y: -0.7, z: 0 },
+            { id: 'h1', symbol: 'H', x: -1.8, y: -0.4, z: 0.8 },
+            { id: 'h2', symbol: 'H', x: -1.8, y: -0.4, z: -0.8 },
+            { id: 'h3', symbol: 'H', x: -1.2, y: -1.8, z: 0 }
+          ],
+          bonds: [
+            { id: 'b1', atom1Id: 'c1', atom2Id: 'o1', order: 2 },
+            { id: 'b2', atom1Id: 'c1', atom2Id: 'c2', order: 1 },
+            { id: 'b3', atom1Id: 'c1', atom2Id: 'c3', order: 1 },
+            { id: 'bh1', atom1Id: 'c2', atom2Id: 'h1', order: 1 },
+            { id: 'bh2', atom1Id: 'c2', atom2Id: 'h2', order: 1 },
+            { id: 'bh3', atom1Id: 'c2', atom2Id: 'h3', order: 1 }
+          ]
+        }
+      },
+      {
+        stepName: '2. Intermedio Enolatto / Deslocalización de Carga [CH₂...C...O]⁻',
+        description: 'Deslocalización por resonancia de la carga negativa entre el C alfa y el Oxígeno.',
+        energyKcal: 15.2,
+        activeIons: ['Anión Enolatto Deslocalizado'],
+        molecule: {
+          id: 'enol_ts',
+          name: 'Estado Enolatto ‡',
+          formula: '[CH₂···C(O)···CH₃]⁻',
+          category: 'Resonancia',
+          description: 'H⁺ en migración.',
+          atoms: [
+            { id: 'c1', symbol: 'C', x: 0, y: 0, z: 0 },
+            { id: 'o1', symbol: 'O', x: -0.5, y: 1.1, z: 0, partialCharge: -0.5 },
+            { id: 'c2', symbol: 'C', x: -1.2, y: -0.5, z: 0, partialCharge: -0.5 },
+            { id: 'c3', symbol: 'C', x: 1.3, y: -0.7, z: 0 },
+            { id: 'h1', symbol: 'H', x: -0.9, y: 0.8, z: 0 } // Migrating H+
+          ],
+          bonds: [
+            { id: 'b1', atom1Id: 'c1', atom2Id: 'o1', order: 1.5 },
+            { id: 'b2', atom1Id: 'c1', atom2Id: 'c2', order: 1.5 },
+            { id: 'b3', atom1Id: 'c1', atom2Id: 'c3', order: 1 },
+            { id: 'bh1', atom1Id: 'o1', atom2Id: 'h1', order: 0.5 },
+            { id: 'bh2', atom1Id: 'c2', atom2Id: 'h1', order: 0.5 }
+          ]
+        }
+      },
+      {
+        stepName: '3. Tautómero Enol (Propen-2-ol)',
+        description: 'Formación del hidroxilo -OH y doble enlace C=C. Estabilizado por enlace de hidrógeno intramolecular.',
+        energyKcal: 10.5,
+        activeIons: ['Forma Enol Minoritaria en Equilibrio'],
+        molecule: {
+          id: 'enol_form',
+          name: 'Tautómero Enol',
+          formula: 'CH₂=C(OH)-CH₃',
+          category: 'Enol',
+          description: 'Alqueno hidroxilado.',
+          atoms: [
+            { id: 'c1', symbol: 'C', x: 0, y: 0, z: 0 },
+            { id: 'o1', symbol: 'O', x: -0.8, y: 1.1, z: 0 },
+            { id: 'ho1', symbol: 'H', x: -1.7, y: 0.9, z: 0 },
+            { id: 'c2', symbol: 'C', x: -1.2, y: -0.6, z: 0 },
+            { id: 'c3', symbol: 'C', x: 1.3, y: -0.7, z: 0 }
+          ],
+          bonds: [
+            { id: 'b1', atom1Id: 'c1', atom2Id: 'o1', order: 1 },
+            { id: 'b2', atom1Id: 'o1', atom2Id: 'ho1', order: 1 },
+            { id: 'b3', atom1Id: 'c1', atom2Id: 'c2', order: 2 }, // C=C double bond
+            { id: 'b4', atom1Id: 'c1', atom2Id: 'c3', order: 1 }
+          ]
+        }
+      }
+    ]
+  },
+  {
     id: 'ionic_redox_nacl',
     title: 'Transferencia de Electrones y Formación Iónica (Na + Cl ⟶ Na⁺ + Cl⁻)',
     equation: 'Na + Cl ⟶ Na⁺ + Cl⁻ ⟶ NaCl',

@@ -34,7 +34,7 @@ export interface Bond3D {
   id: string;
   atom1Id: string;
   atom2Id: string;
-  order: 1 | 2 | 3 | 0.5; // 0.5 for hydrogen bond or aromatic partial bond
+  order: 1 | 2 | 3 | 0.5 | 1.5; // 0.5 for hydrogen bond, 1.5 for aromatic/resonant partial double bond
 }
 
 export interface Molecule3D {
