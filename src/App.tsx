@@ -8,7 +8,8 @@ import { Atom3D, Bond3D, ExternalFieldsConfig, MolecularOrbitalType, Molecule3D,
 import { PRESET_MOLECULES } from './data/molecules';
 import { ELEMENTS } from './data/elements';
 import { calculateChemicalFormula } from './utils/vsepr';
-import { relaxMoleculeQuantumStep } from './utils/quantumEngine';
+import { relaxMoleculeQuantumStep, stabilizeMoleculeGeometry } from './utils/quantumEngine';
+import { evaluateMolecularStability, canFormBond, canAddAtom } from './utils/chemicalPhysics';
 import { sounds } from './utils/audio';
 
 import { VRCanvas } from './components/VRCanvas';
@@ -20,6 +21,8 @@ import { MolecularPropertiesPanel } from './components/MolecularPropertiesPanel'
 import { PeriodicTableModal } from './components/PeriodicTableModal';
 import { VRGuideModal } from './components/VRGuideModal';
 import { QuantumAIPanel } from './components/QuantumAIPanel';
+import { ChemicalReactionsPanel } from './components/ChemicalReactionsPanel';
+import { AlertOctagon } from 'lucide-react';
 
 export default function App() {
   // 1. Core Molecular State
@@ -27,6 +30,9 @@ export default function App() {
   const [selectedAtomId, setSelectedAtomId] = useState<string | null>(null);
   const [selectedElement, setSelectedElement] = useState<string>('C');
   const [activeBondOrder, setActiveBondOrder] = useState<1 | 2 | 3 | 0.5>(1);
+
+  // Physics Restrictions & Warning Messages
+  const [physicsWarning, setPhysicsWarning] = useState<string | null>(null);
 
   // 2. View & VR State
   const [viewMode, setViewMode] = useState<ViewMode>('ball-and-stick');
@@ -41,6 +47,7 @@ export default function App() {
   const [showPropertiesPanel, setShowPropertiesPanel] = useState<boolean>(true);
   const [isPropertiesExpanded, setIsPropertiesExpanded] = useState<boolean>(true);
   const [showAIPanel, setShowAIPanel] = useState<boolean>(false);
+  const [isReactionsModalOpen, setIsReactionsModalOpen] = useState<boolean>(false);
 
   // 4. Quantum Mechanics, Orbitals & External Fields State
   const [selectedMolecularOrbital, setSelectedMolecularOrbital] = useState<MolecularOrbitalType>('HOMO');
@@ -65,6 +72,9 @@ export default function App() {
   // Real-time Quantum VSEPR & Field Relaxation Loop
   const [isRelaxing, setIsRelaxing] = useState<boolean>(false);
 
+  // Real-time Stability Analysis Banner
+  const stability = evaluateMolecularStability(molecule.atoms, molecule.bonds);
+
   useEffect(() => {
     if (!isRelaxing) return;
     let frameId: number;
@@ -87,7 +97,27 @@ export default function App() {
     return () => cancelAnimationFrame(frameId);
   }, [isRelaxing, externalFields]);
 
-  // Handle atom selection or bonding between 2 atoms (ChemDraw style)
+  // STABILIZE MOLECULE ACTION
+  const handleStabilizeMolecule = () => {
+    sounds.playBond();
+    const result = stabilizeMoleculeGeometry(molecule.atoms, molecule.bonds);
+    setMolecule(prev => ({
+      ...prev,
+      atoms: result.atoms,
+      bonds: result.bonds
+    }));
+    setIsRelaxing(true);
+
+    if (result.cleanedCount > 0) {
+      setPhysicsWarning(`Se eliminaron ${result.cleanedCount} enlace(s) ilegal(es) que violaban las leyes de valencia.`);
+      setTimeout(() => setPhysicsWarning(null), 4000);
+    } else {
+      setPhysicsWarning('Geometría molecular optimizada y estabilizada según el principio de mínima energía.');
+      setTimeout(() => setPhysicsWarning(null), 3500);
+    }
+  };
+
+  // Handle atom selection or bonding between 2 atoms with Physical Valence Checks
   const handleSelectAtom = useCallback((clickedId: string | null) => {
     if (!clickedId) {
       setSelectedAtomId(null);
@@ -95,6 +125,15 @@ export default function App() {
     }
 
     if (selectedAtomId && selectedAtomId !== clickedId) {
+      // Check if bond is allowed by quantum chemical physics
+      const check = canFormBond(selectedAtomId, clickedId, molecule.atoms, molecule.bonds, activeBondOrder === 0.5 ? 0 : activeBondOrder);
+      if (!check.allowed) {
+        sounds.playDelete();
+        setPhysicsWarning(check.reason || 'Acción prohibida por las leyes de la física química.');
+        setTimeout(() => setPhysicsWarning(null), 4000);
+        return;
+      }
+
       // Connect existing selected atom with clicked atom
       setMolecule(prev => {
         const existingBondIndex = prev.bonds.findIndex(b => 
@@ -104,19 +143,17 @@ export default function App() {
 
         let newBonds: Bond3D[] = [...prev.bonds];
         if (existingBondIndex >= 0) {
-          // If bond exists, cycle bond order or remove if triple
+          // Cycle or remove bond
           const curOrder = newBonds[existingBondIndex].order;
           if (curOrder === 1) newBonds[existingBondIndex].order = 2;
           else if (curOrder === 2) newBonds[existingBondIndex].order = 3;
           else {
-            // Remove bond
             newBonds = newBonds.filter((_, idx) => idx !== existingBondIndex);
             sounds.playDelete();
             return { ...prev, bonds: newBonds };
           }
           sounds.playBond();
         } else {
-          // Add new bond
           newBonds.push({
             id: `b_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
             atom1Id: selectedAtomId,
@@ -130,13 +167,21 @@ export default function App() {
       setIsRelaxing(true);
       setSelectedAtomId(clickedId);
     } else {
-      // Select atom
       setSelectedAtomId(clickedId === selectedAtomId ? null : clickedId);
     }
-  }, [selectedAtomId, activeBondOrder]);
+  }, [selectedAtomId, activeBondOrder, molecule]);
 
-  // Add new atom to scene
+  // Add new atom with Physical Valence Restriction
   const handleAddAtom = (symbol: string) => {
+    // Check if adding this atom violates parent atom's maximum valency
+    const check = canAddAtom(symbol, selectedAtomId, molecule.atoms, molecule.bonds, activeBondOrder === 0.5 ? 0 : activeBondOrder);
+    if (!check.allowed) {
+      sounds.playDelete();
+      setPhysicsWarning(check.reason || 'Límite de valencia física alcanzado.');
+      setTimeout(() => setPhysicsWarning(null), 4000);
+      return;
+    }
+
     sounds.playClick();
     const newId = `a_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
 
@@ -144,7 +189,6 @@ export default function App() {
     let newY = (Math.random() - 0.5) * 1.5;
     let newZ = (Math.random() - 0.5) * 1.5;
 
-    // If an atom is currently selected, place new atom nearby and connect them!
     if (selectedAtomId) {
       const parent = molecule.atoms.find(a => a.id === selectedAtomId);
       if (parent) {
@@ -189,13 +233,12 @@ export default function App() {
     setIsRelaxing(true);
   };
 
-  // Move atom in 3D during dragging
+  // Move atom in 3D
   const handleAtomMove = (id: string, x: number, y: number, z: number) => {
     setMolecule(prev => ({
       ...prev,
       atoms: prev.atoms.map(a => a.id === id ? { ...a, x, y, z } : a)
     }));
-    // Gentle real-time spring relaxation while dragging
     setMolecule(prev => ({
       ...prev,
       atoms: relaxMoleculeQuantumStep(prev.atoms, prev.bonds, externalFields, id, 0.4)
@@ -214,7 +257,7 @@ export default function App() {
     setIsRelaxing(true);
   };
 
-  // Auto-saturate with Hydrogens (ChemDraw feature)
+  // Auto-saturate with Hydrogens
   const handleAddHydrogens = () => {
     setMolecule(prev => {
       const newAtoms = [...prev.atoms];
@@ -224,7 +267,6 @@ export default function App() {
         const elem = ELEMENTS[atom.symbol];
         if (!elem || atom.symbol === 'H') return;
 
-        // Count current bond orders connected to this atom
         const currentBonds = prev.bonds.filter(b => b.atom1Id === atom.id || b.atom2Id === atom.id);
         const currentValence = currentBonds.reduce((sum, b) => sum + (b.order === 0.5 ? 0 : b.order), 0);
         const needed = Math.max(0, elem.maxBonds - currentValence);
@@ -298,7 +340,7 @@ export default function App() {
   // Matter Genesis Actions
   const handleInjectEnergy = () => {
     setQuantumParticlesCount(prev => prev + 12);
-    setMatterCreatedCount(prev => prev + 2); // 1 electron + 1 positron
+    setMatterCreatedCount(prev => prev + 2);
   };
 
   const handleSynthesizeProton = () => {
@@ -309,7 +351,7 @@ export default function App() {
 
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-gray-950 font-sans text-gray-100 select-none">
-      {/* 1. TOP BAR */}
+      {/* 1. TOP BAR (UNIFIED MINIMALIST BANNER & NAVIGATION) */}
       {vrMode !== 'cardboard' && (
         <TopBar
           zoomLevel={zoomLevel}
@@ -322,10 +364,21 @@ export default function App() {
           onTogglePropertiesPanel={() => setShowPropertiesPanel(prev => !prev)}
           showAIPanel={showAIPanel}
           onToggleAIPanel={() => setShowAIPanel(prev => !prev)}
+          onOpenReactionsModal={() => setIsReactionsModalOpen(true)}
+          stability={stability}
+          onStabilizeMolecule={handleStabilizeMolecule}
         />
       )}
 
-      {/* 2. THREE.JS 3D / VR CANVAS */}
+      {/* 3. PHYSICAL WARNING TOAST POPUP */}
+      {physicsWarning && (
+        <div className="absolute top-28 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2.5 bg-rose-950/95 border border-rose-600 text-rose-100 text-xs font-bold rounded-xl shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+          <AlertOctagon className="w-4 h-4 text-rose-400 shrink-0" />
+          <span>{physicsWarning}</span>
+        </div>
+      )}
+
+      {/* 4. THREE.JS 3D / VR CANVAS */}
       <VRCanvas
         molecule={molecule}
         viewMode={viewMode}
@@ -353,7 +406,7 @@ export default function App() {
         }}
       />
 
-      {/* 3. CHEMDRAW TOOLBAR & MOLECULAR PROPERTIES */}
+      {/* 5. CHEMDRAW TOOLBAR & MOLECULAR PROPERTIES */}
       {vrMode !== 'cardboard' && (zoomLevel === 'molecular' || zoomLevel === 'macro') && (
         <>
           <div className="mt-14">
@@ -366,6 +419,7 @@ export default function App() {
               onDeleteSelected={handleDeleteSelected}
               hasSelection={!!selectedAtomId}
               onOptimizeVSEPR={() => setIsRelaxing(true)}
+              onStabilizeMolecule={handleStabilizeMolecule}
               onAddHydrogens={handleAddHydrogens}
               onClear={handleClear}
               onLoadPreset={handleLoadPreset}
@@ -385,7 +439,7 @@ export default function App() {
         </>
       )}
 
-      {/* 4. QUANTUM AI PANEL */}
+      {/* 6. QUANTUM AI PANEL */}
       {vrMode !== 'cardboard' && showAIPanel && (
         <QuantumAIPanel
           molecule={molecule}
@@ -394,7 +448,18 @@ export default function App() {
         />
       )}
 
-      {/* 5. MATTER LAB & QUANTUM CONTROLS */}
+      {/* 7. CHEMICAL REACTIONS SIMULATOR MODAL */}
+      <ChemicalReactionsPanel
+        isOpen={isReactionsModalOpen}
+        onClose={() => setIsReactionsModalOpen(false)}
+        onLoadReactionMolecule={(rxnMolecule) => {
+          setMolecule(JSON.parse(JSON.stringify(rxnMolecule)));
+          setSelectedAtomId(null);
+          setIsRelaxing(true);
+        }}
+      />
+
+      {/* 8. MATTER LAB & QUANTUM CONTROLS */}
       {vrMode !== 'cardboard' && (
         <div className="mt-14">
           <MatterLabPanel
@@ -419,7 +484,7 @@ export default function App() {
         </div>
       )}
 
-      {/* 6. VR CONTROLS & CARDBOARD OVERLAY */}
+      {/* 9. VR CONTROLS & CARDBOARD OVERLAY */}
       <VRControlsOverlay
         vrMode={vrMode}
         onChangeVRMode={setVRMode}
@@ -437,7 +502,7 @@ export default function App() {
         gazeProgress={gazeProgress}
       />
 
-      {/* 7. MODALS */}
+      {/* 10. MODALS */}
       <PeriodicTableModal
         isOpen={isPeriodicTableOpen}
         onClose={() => setIsPeriodicTableOpen(false)}

@@ -4,7 +4,6 @@ import { quantumAIModel, AIPredictionResult } from '../utils/quantumAI';
 import { sounds } from '../utils/audio';
 import {
   Bot,
-  Cpu,
   Play,
   Sparkles,
   Activity,
@@ -12,7 +11,9 @@ import {
   Zap,
   ChevronDown,
   ChevronUp,
-  X
+  X,
+  Radio,
+  BarChart2
 } from 'lucide-react';
 
 interface QuantumAIPanelProps {
@@ -28,9 +29,9 @@ export const QuantumAIPanel: React.FC<QuantumAIPanelProps> = ({
 }) => {
   const [aiState, setAiState] = useState<QuantumAIState>({
     isTraining: false,
-    trainingEpochs: 0,
-    lossHistory: [0.45, 0.38, 0.31, 0.25, 0.18, 0.12],
-    accuracy: 88.5,
+    trainingEpochs: 12,
+    lossHistory: [0.38, 0.29, 0.22, 0.16, 0.11, 0.07, 0.04, 0.025],
+    accuracy: 94.2,
     predictedHomoLumoGapEv: 3.42,
     predictedDipole: 1.85,
     modelStatus: 'trained'
@@ -69,8 +70,8 @@ export const QuantumAIPanel: React.FC<QuantumAIPanelProps> = ({
         <div className="flex items-center gap-2">
           <BrainCircuit className="w-5 h-5 text-indigo-400 animate-pulse" />
           <div>
-            <h3 className="text-xs font-bold text-indigo-100 tracking-wide">IA Cuántica Química (Quantum Neural Agent)</h3>
-            <p className="text-[10px] text-indigo-300/80">Modelo Neuronal Especializado en Química Cuántica</p>
+            <h3 className="text-xs font-bold text-indigo-100 tracking-wide">IA Agente Grafo-Cuántica</h3>
+            <p className="text-[10px] text-indigo-300/80">Predicción de Espectros, GAP y Estabilidad</p>
           </div>
         </div>
 
@@ -91,15 +92,15 @@ export const QuantumAIPanel: React.FC<QuantumAIPanelProps> = ({
       </div>
 
       {isExpanded && (
-        <div className="p-4 space-y-3.5 text-xs text-gray-200 max-h-[70vh] overflow-y-auto">
+        <div className="p-4 space-y-3 text-xs text-gray-200 max-h-[70vh] overflow-y-auto">
           {/* Status Badge & Neural Accuracy */}
           <div className="flex items-center justify-between p-2.5 bg-gray-950/70 border border-indigo-900/40 rounded-xl">
             <div className="flex items-center gap-2">
               <Bot className="w-4 h-4 text-indigo-400" />
               <div>
-                <div className="text-[10px] text-gray-400">Estado del Modelo</div>
+                <div className="text-[10px] text-gray-400">Estado de la IA</div>
                 <div className="text-xs font-bold text-indigo-300 capitalize">
-                  {aiState.modelStatus === 'training' ? 'Entrenando Red...' : 'Entrenado & Activo'}
+                  {aiState.modelStatus === 'training' ? 'Backpropagation Activo...' : 'Red Neuronal Entrenada'}
                 </div>
               </div>
             </div>
@@ -110,12 +111,12 @@ export const QuantumAIPanel: React.FC<QuantumAIPanelProps> = ({
             </div>
           </div>
 
-          {/* AI Inference Predictions Card */}
-          <div className="p-3 bg-gray-950/80 border border-indigo-900/50 rounded-xl space-y-2.5">
+          {/* AI Predictions Card */}
+          <div className="p-3 bg-gray-950/80 border border-indigo-900/50 rounded-xl space-y-2">
             <div className="flex items-center justify-between text-[11px] font-semibold text-indigo-300">
               <span className="flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                Predicción Neuronal de la Molécula
+                Predicciones de la Red Neuronal
               </span>
               <span className="text-[10px] text-emerald-400 font-mono">Confianza: {prediction.aiConfidence}%</span>
             </div>
@@ -127,13 +128,13 @@ export const QuantumAIPanel: React.FC<QuantumAIPanelProps> = ({
               </div>
 
               <div className="p-2 bg-gray-900/80 rounded-lg border border-gray-800">
-                <div className="text-[9px] text-gray-400 uppercase">Dipolo Predicho</div>
-                <div className="text-sm font-bold text-indigo-300">{prediction.predictedDipoleDebye} D</div>
+                <div className="text-[9px] text-gray-400 uppercase">Pico UV-Vis</div>
+                <div className="text-sm font-bold text-amber-400">{prediction.uvVisPeakNm} nm</div>
               </div>
 
               <div className="p-2 bg-gray-900/80 rounded-lg border border-gray-800">
-                <div className="text-[9px] text-gray-400 uppercase">Aromaticidad</div>
-                <div className="text-sm font-bold text-amber-400">{(prediction.predictedAromaticityScore * 100).toFixed(0)}%</div>
+                <div className="text-[9px] text-gray-400 uppercase">Estiramiento IR</div>
+                <div className="text-sm font-bold text-indigo-300">{prediction.vibrationalIRFrequencyCm1} cm⁻¹</div>
               </div>
 
               <div className="p-2 bg-gray-900/80 rounded-lg border border-gray-800">
@@ -147,17 +148,17 @@ export const QuantumAIPanel: React.FC<QuantumAIPanelProps> = ({
             </div>
           </div>
 
-          {/* Loss Curve Graph Visualization */}
-          <div className="p-2.5 bg-gray-950/70 border border-gray-800 rounded-xl space-y-1.5">
+          {/* Training Loss Curve */}
+          <div className="p-2.5 bg-gray-950/70 border border-gray-800 rounded-xl space-y-1">
             <div className="flex justify-between items-center text-[10px] text-gray-400">
               <span className="flex items-center gap-1">
                 <Activity className="w-3 h-3 text-indigo-400" />
-                Curva de Pérdida (Loss Curve - Epoc {aiState.trainingEpochs})
+                Curva de Pérdida (Loss - Epoc {aiState.trainingEpochs})
               </span>
               <span className="font-mono text-indigo-300">Loss: {aiState.lossHistory[aiState.lossHistory.length - 1]?.toFixed(3) || '0.012'}</span>
             </div>
 
-            <div className="h-10 flex items-end gap-1 pt-1 border-b border-gray-800">
+            <div className="h-8 flex items-end gap-1 pt-1 border-b border-gray-800">
               {aiState.lossHistory.map((val, idx) => {
                 const heightPct = Math.max(10, Math.min(100, val * 180));
                 return (

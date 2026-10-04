@@ -582,3 +582,89 @@ export function relaxMoleculeQuantumStep(
     };
   });
 }
+
+/**
+ * QUANTUM STABILIZATION ENGINE
+ * Automatically corrects geometry, adjusts bond lengths to equilibrium covalent radii,
+ * forcibly breaks impossible bonds that exceed maximum valency, repels steric overlaps,
+ * and optimizes bond angles.
+ */
+export function stabilizeMoleculeGeometry(
+  atoms: Atom3D[],
+  bonds: Bond3D[]
+): { atoms: Atom3D[]; bonds: Bond3D[]; cleanedCount: number } {
+  if (atoms.length === 0) return { atoms, bonds, cleanedCount: 0 };
+
+  // 1. Forcibly sever/break illegal bonds exceeding element max valency
+  let cleanedCount = 0;
+  const newBonds: Bond3D[] = [];
+  const currentValenceMap: Record<string, number> = {};
+
+  atoms.forEach(a => { currentValenceMap[a.id] = 0; });
+
+  // Prioritize bonds by lowest bond order or order of definition
+  bonds.forEach(b => {
+    const a1 = atoms.find(a => a.id === b.atom1Id);
+    const a2 = atoms.find(a => a.id === b.atom2Id);
+    if (!a1 || !a2) return;
+
+    const el1 = ELEMENTS[a1.symbol];
+    const el2 = ELEMENTS[a2.symbol];
+    const bOrder = b.order === 0.5 ? 0 : b.order;
+
+    if (
+      currentValenceMap[a1.id] + bOrder <= (el1?.maxBonds || 4) &&
+      currentValenceMap[a2.id] + bOrder <= (el2?.maxBonds || 4)
+    ) {
+      newBonds.push(b);
+      currentValenceMap[a1.id] += bOrder;
+      currentValenceMap[a2.id] += bOrder;
+    } else {
+      cleanedCount++; // Forcibly broken impossible bond
+    }
+  });
+
+  // 2. Perform 60 steps of aggressive steric repulsion & VSEPR geometry optimization
+  let optimizedAtoms = JSON.parse(JSON.stringify(atoms));
+
+  for (let iter = 0; iter < 60; iter++) {
+    // Separate overlapping atoms
+    for (let i = 0; i < optimizedAtoms.length; i++) {
+      for (let j = i + 1; j < optimizedAtoms.length; j++) {
+        const a1 = optimizedAtoms[i];
+        const a2 = optimizedAtoms[j];
+        const dx = a2.x - a1.x;
+        const dy = a2.y - a1.y;
+        const dz = a2.z - a1.z;
+        const dist = Math.hypot(dx, dy, dz) || 0.001;
+
+        const r1 = ELEMENTS[a1.symbol]?.covalentRadius || 0.7;
+        const r2 = ELEMENTS[a2.symbol]?.covalentRadius || 0.7;
+        const minDistance = (r1 + r2) * 1.1;
+
+        if (dist < minDistance) {
+          const push = (minDistance - dist) * 0.35;
+          const px = (dx / dist) * push;
+          const py = (dy / dist) * push;
+          const pz = (dz / dist) * push;
+
+          a1.x -= px;
+          a1.y -= py;
+          a1.z -= pz;
+
+          a2.x += px;
+          a2.y += py;
+          a2.z += pz;
+        }
+      }
+    }
+
+    optimizedAtoms = relaxMoleculeQuantumStep(optimizedAtoms, newBonds, undefined, null, 0.9);
+  }
+
+  return {
+    atoms: optimizedAtoms,
+    bonds: newBonds,
+    cleanedCount
+  };
+}
