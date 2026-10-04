@@ -74,8 +74,8 @@ export const ChemicalReactionsPanel: React.FC<ChemicalReactionsPanelProps> = ({
           <div className="flex items-center gap-2">
             <Flame className="w-5 h-5 text-amber-400 animate-pulse" />
             <div>
-              <h2 className="text-base font-bold text-gray-100">Simulador de Reacciones Químicas 3D</h2>
-              <p className="text-xs text-gray-400">Observa mecanismos de reacción, estados de transición y perfiles de energía ΔH</p>
+              <h2 className="text-base font-bold text-gray-100">Simulador de Reacciones Químicas, Electrones e Iones 3D</h2>
+              <p className="text-xs text-gray-400">Observa mecanismos de reacción, transferencia de electrones, atracción iónica y perfiles ΔH</p>
             </div>
           </div>
           <button
@@ -158,6 +158,24 @@ export const ChemicalReactionsPanel: React.FC<ChemicalReactionsPanelProps> = ({
           <p className="text-xs text-gray-300 leading-relaxed font-mono">
             {currentStep.description}
           </p>
+
+          {/* Active Ions or Electron Transfer Badges */}
+          {(currentStep.activeIons || currentStep.electronTransfers) && (
+            <div className="flex flex-wrap gap-2 pt-1">
+              {currentStep.activeIons?.map((ionText, idx) => (
+                <span key={idx} className="px-2 py-0.5 text-[10px] font-mono font-bold text-sky-300 bg-sky-950/80 border border-sky-700/60 rounded-md flex items-center gap-1">
+                  <Zap className="w-3 h-3 text-sky-400" />
+                  {ionText}
+                </span>
+              ))}
+              {currentStep.electronTransfers?.map((et, idx) => (
+                <span key={idx} className="px-2 py-0.5 text-[10px] font-mono font-bold text-amber-300 bg-amber-950/80 border border-amber-700/60 rounded-md flex items-center gap-1">
+                  <Sparkles className="w-3 h-3 text-amber-400" />
+                  {et.description || `Flujo e⁻: ${et.electronCount} e⁻`}
+                </span>
+              ))}
+            </div>
+          )}
 
           {/* Progress Bar of Steps */}
           <div className="flex gap-1.5 pt-1">

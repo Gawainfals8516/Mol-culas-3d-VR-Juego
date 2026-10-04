@@ -104,18 +104,38 @@ export interface QuantumAIState {
 }
 
 // Chemical Reaction Data Types
+export interface ElectronParticle {
+  id: string;
+  position: [number, number, number];
+  velocity: [number, number, number];
+  targetAtomId?: string;
+  sourceAtomId?: string;
+  spin: 'up' | 'down';
+  energyEv: number;
+}
+
+export interface ElectronTransferArrow {
+  fromAtomId: string;
+  toAtomId: string;
+  electronCount: 1 | 2; // Single electron (radicals) or electron pair (nucleophilic attack)
+  description?: string;
+}
+
 export interface ChemicalReactionStep {
   stepName: string;
   description: string;
   molecule: Molecule3D; // 3D Molecular snapshot for this step
   energyKcal: number; // Relative potential energy along reaction coordinate
+  freeElectrons?: ElectronParticle[];
+  electronTransfers?: ElectronTransferArrow[];
+  activeIons?: string[]; // Descriptions of active cations/anions in solution
 }
 
 export interface ChemicalReaction {
   id: string;
   title: string;
   equation: string; // e.g. "CH4 + 2 O2 -> CO2 + 2 H2O"
-  type: 'Combustión' | 'Síntesis / Adición' | 'S_N2 Sustitución' | 'Neutralización Ácido-Base' | 'Óxido-Reducción';
+  type: 'Combustión' | 'Síntesis / Adición' | 'S_N2 Sustitución' | 'Neutralización Ácido-Base' | 'Óxido-Reducción' | 'Formación de Enlace Iónico';
   description: string;
   activationEnergyKcal: number; // E_a
   enthalpyKcal: number; // Delta H

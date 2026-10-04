@@ -60,10 +60,10 @@ export const TopBar: React.FC<TopBarProps> = ({
             sounds.playClick();
             onOpenReactionsModal();
           }}
-          className="hover:text-amber-300 transition-colors text-amber-400 font-semibold flex items-center gap-1.5"
+          className="hover:text-amber-300 transition-colors text-amber-400 font-semibold flex items-center gap-1.5 px-2 py-1 rounded-lg bg-amber-950/40 border border-amber-800/50 shadow-sm"
         >
           <Flame className="w-4 h-4 text-amber-400 animate-pulse" />
-          <span>Reacciones Químicas</span>
+          <span>Reacciones, Electrones e Iones</span>
         </button>
         <button
           onClick={() => {

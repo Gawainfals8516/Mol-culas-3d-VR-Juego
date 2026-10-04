@@ -2,6 +2,204 @@ import { ChemicalReaction } from '../types/chemistry';
 
 export const CHEMICAL_REACTIONS: ChemicalReaction[] = [
   {
+    id: 'ionic_redox_nacl',
+    title: 'Transferencia de Electrones y Formación Iónica (Na + Cl ⟶ Na⁺ + Cl⁻)',
+    equation: 'Na + Cl ⟶ Na⁺ + Cl⁻ ⟶ NaCl',
+    type: 'Formación de Enlace Iónico',
+    description: 'Transferencia directa de 1 electrón de valencia desde el átomo de Sodio (Na) hacia el Cloro (Cl), generando los iones Na⁺ (catión) y Cl⁻ (anión) atraídos por fuerza electrostática de Coulomb.',
+    activationEnergyKcal: 12.4,
+    enthalpyKcal: -98.2,
+    isExothermic: true,
+    steps: [
+      {
+        stepName: '1. Neutros Neutro Na (3s¹) + Cl (3p⁵)',
+        description: 'Sodio neutro con un electrón de valencia débilmente unido (baja energía de ionización) y Cloro neutro con alta afinidad electrónica.',
+        energyKcal: 0,
+        activeIons: ['Átomo Sodio Neutro (Naº)', 'Átomo Cloro Neutro (Clº)'],
+        electronTransfers: [
+          {
+            fromAtomId: 'na1',
+            toAtomId: 'cl1',
+            electronCount: 1,
+            description: 'Flujo de electrón 3s¹ hacia el orbital desocupado 3p de Cl'
+          }
+        ],
+        freeElectrons: [
+          { id: 'e1', position: [-0.5, 0.2, 0], velocity: [0.8, 0, 0], spin: 'up', energyEv: 5.14 }
+        ],
+        molecule: {
+          id: 'nacl_neutral',
+          name: 'Sodio y Cloro Neutros',
+          formula: 'Na + Cl',
+          category: 'Interacción Iónica',
+          description: 'Átomos neutros en curso de colisión.',
+          atoms: [
+            { id: 'na1', symbol: 'Na', x: -2.2, y: 0, z: 0, formalCharge: 0, partialCharge: 0.05 },
+            { id: 'cl1', symbol: 'Cl', x: 2.2, y: 0, z: 0, formalCharge: 0, partialCharge: -0.05 }
+          ],
+          bonds: []
+        }
+      },
+      {
+        stepName: '2. Transferencia de Electrón e⁻ (Ionización)',
+        description: 'El electrón de valencia se deslocaliza completamente hacia el Cloro. Formación del par iónico [Na]⁺ y [Cl]⁻.',
+        energyKcal: 12.4,
+        activeIons: ['Catión Sodio Na⁺', 'Anión Cloruro Cl⁻'],
+        freeElectrons: [
+          { id: 'e1_moving', position: [0.2, 0.05, 0], velocity: [1.2, 0, 0], spin: 'up', energyEv: 3.61 }
+        ],
+        electronTransfers: [
+          {
+            fromAtomId: 'na1',
+            toAtomId: 'cl1',
+            electronCount: 1,
+            description: 'Salto cuántico del electrón'
+          }
+        ],
+        molecule: {
+          id: 'nacl_transfer',
+          name: 'Par Iónico en Formación',
+          formula: 'Na⁺ ··· e⁻ ··· Cl⁻',
+          category: 'Iónico',
+          description: 'Transferencia electrónica en progreso.',
+          atoms: [
+            { id: 'na1', symbol: 'Na', x: -1.4, y: 0, z: 0, formalCharge: 1, partialCharge: 0.85 },
+            { id: 'cl1', symbol: 'Cl', x: 1.4, y: 0, z: 0, formalCharge: -1, partialCharge: -0.85 }
+          ],
+          bonds: [
+            { id: 'b_ion', atom1Id: 'na1', atom2Id: 'cl1', order: 0.5 }
+          ]
+        }
+      },
+      {
+        stepName: '3. Red Cristalina Iónica de Cloruro de Sodio (NaCl)',
+        description: 'Atracción Coulombiana fuerte $F \propto q_1 q_2 / r^2$. Formación del enlace iónico súper estable.',
+        energyKcal: -98.2,
+        activeIons: ['Enlace Electroostático Na⁺Cl⁻ (Atracción de Coulomb)'],
+        molecule: {
+          id: 'nacl_crystal',
+          name: 'Cristal Iónico de NaCl',
+          formula: 'NaCl (Iónico)',
+          category: 'Par Iónico Estabilizado',
+          description: 'Sal neutra iónica con octetos completos.',
+          atoms: [
+            { id: 'na1', symbol: 'Na', x: -1.0, y: 0, z: 0, formalCharge: 1, partialCharge: 1.0 },
+            { id: 'cl1', symbol: 'Cl', x: 1.0, y: 0, z: 0, formalCharge: -1, partialCharge: -1.0 }
+          ],
+          bonds: [
+            { id: 'b_ion', atom1Id: 'na1', atom2Id: 'cl1', order: 0.5 }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    id: 'acid_base_neutralization',
+    title: 'Neutralización Ácido-Base (H₃O⁺ + OH⁻ ⟶ 2 H₂O)',
+    equation: 'H₃O⁺ + OH⁻ ⟶ 2 H₂O',
+    type: 'Neutralización Ácido-Base',
+    description: 'Transferencia ultra rápida de protón (H⁺) mediante el mecanismo de Grotthuss desde el ión hidronio al ión hidróxido.',
+    activationEnergyKcal: 2.1,
+    enthalpyKcal: -13.3,
+    isExothermic: true,
+    steps: [
+      {
+        stepName: '1. Iones Disueltos: Hidronio (H₃O⁺) e Hidróxido (OH⁻)',
+        description: 'Catión Hidronio positivo y Anión Hidróxido negativo atraídos electrostáticamente en medio acuoso.',
+        energyKcal: 0,
+        activeIons: ['Ión Hidronio H₃O⁺', 'Ión Hidróxido OH⁻'],
+        electronTransfers: [
+          {
+            fromAtomId: 'o2',
+            toAtomId: 'h3',
+            electronCount: 2,
+            description: 'Ataque nucleofílico del par solitario del Oxígeno sobre el Protón H⁺'
+          }
+        ],
+        molecule: {
+          id: 'h3o_oh_ions',
+          name: 'H₃O⁺ + OH⁻',
+          formula: 'H₃O⁺ + OH⁻',
+          category: 'Ácido-Base',
+          description: 'Iones con cargas formales opuestas +1 y -1.',
+          atoms: [
+            // H3O+
+            { id: 'o1', symbol: 'O', x: -1.8, y: 0, z: 0, formalCharge: 1, partialCharge: 0.4 },
+            { id: 'h1', symbol: 'H', x: -2.4, y: 0.8, z: 0, partialCharge: 0.2 },
+            { id: 'h2', symbol: 'H', x: -2.4, y: -0.8, z: 0, partialCharge: 0.2 },
+            { id: 'h3', symbol: 'H', x: -0.7, y: 0, z: 0, partialCharge: 0.2 }, // Transferring H+
+            // OH-
+            { id: 'o2', symbol: 'O', x: 1.2, y: 0, z: 0, formalCharge: -1, partialCharge: -0.8 },
+            { id: 'h4', symbol: 'H', x: 2.0, y: 0.6, z: 0, partialCharge: -0.2 }
+          ],
+          bonds: [
+            { id: 'b1', atom1Id: 'o1', atom2Id: 'h1', order: 1 },
+            { id: 'b2', atom1Id: 'o1', atom2Id: 'h2', order: 1 },
+            { id: 'b3', atom1Id: 'o1', atom2Id: 'h3', order: 1 },
+            { id: 'b4', atom1Id: 'o2', atom2Id: 'h4', order: 1 }
+          ]
+        }
+      },
+      {
+        stepName: '2. Transferencia de Protón H⁺ (Mecanismo Grotthuss)',
+        description: 'El par solitario del oxígeno en OH⁻ captura al protón H⁺ formando enlaces de puente transitorios.',
+        energyKcal: 2.1,
+        activeIons: ['Estado de Transición Ácido-Base [H₂O···H···OH]‡'],
+        molecule: {
+          id: 'proton_transfer_ts',
+          name: 'Transferencia de Protón',
+          formula: '[H₂O···H···OH]‡',
+          category: 'Transición',
+          description: 'El protón se desplaza en el pozo de potencial cuántico simétrico.',
+          atoms: [
+            { id: 'o1', symbol: 'O', x: -1.4, y: 0, z: 0, partialCharge: -0.1 },
+            { id: 'h1', symbol: 'H', x: -2.1, y: 0.8, z: 0 },
+            { id: 'h2', symbol: 'H', x: -2.1, y: -0.8, z: 0 },
+            { id: 'h3', symbol: 'H', x: 0, y: 0, z: 0, partialCharge: 0.4 }, // Floating Proton
+            { id: 'o2', symbol: 'O', x: 1.4, y: 0, z: 0, partialCharge: -0.1 },
+            { id: 'h4', symbol: 'H', x: 2.1, y: 0.6, z: 0 }
+          ],
+          bonds: [
+            { id: 'b1', atom1Id: 'o1', atom2Id: 'h1', order: 1 },
+            { id: 'b2', atom1Id: 'o1', atom2Id: 'h2', order: 1 },
+            { id: 'b3', atom1Id: 'o1', atom2Id: 'h3', order: 0.5 },
+            { id: 'b4', atom1Id: 'o2', atom2Id: 'h3', order: 0.5 },
+            { id: 'b5', atom1Id: 'o2', atom2Id: 'h4', order: 1 }
+          ]
+        }
+      },
+      {
+        stepName: '3. Dos Moléculas Neutras de Agua (2 H₂O)',
+        description: 'Formación de dos moléculas neutras de agua de alta estabilidad termodinámica con ángulo de enlace de 104.5°.',
+        energyKcal: -13.3,
+        activeIons: ['Moléculas Neutras de H₂O'],
+        molecule: {
+          id: 'two_water_molecules',
+          name: '2 H₂O Neutras',
+          formula: '2 H₂O',
+          category: 'Agua Neutra',
+          description: 'Sistema totalmente neutralizado.',
+          atoms: [
+            // H2O #1
+            { id: 'o1', symbol: 'O', x: -1.6, y: 0, z: 0 },
+            { id: 'h1', symbol: 'H', x: -2.2, y: 0.8, z: 0 },
+            { id: 'h2', symbol: 'H', x: -2.2, y: -0.8, z: 0 },
+            // H2O #2
+            { id: 'o2', symbol: 'O', x: 1.6, y: 0, z: 0 },
+            { id: 'h3', symbol: 'H', x: 1.0, y: -0.7, z: 0 },
+            { id: 'h4', symbol: 'H', x: 2.2, y: 0.6, z: 0 }
+          ],
+          bonds: [
+            { id: 'b1', atom1Id: 'o1', atom2Id: 'h1', order: 1 },
+            { id: 'b2', atom1Id: 'o1', atom2Id: 'h2', order: 1 },
+            { id: 'b3', atom1Id: 'o2', atom2Id: 'h3', order: 1 },
+            { id: 'b4', atom1Id: 'o2', atom2Id: 'h4', order: 1 }
+          ]
+        }
+      }
+    ]
+  },
+  {
     id: 'methane_combustion',
     title: 'Combustión del Metano (CH₄ + 2O₂ → CO₂ + 2H₂O)',
     equation: 'CH₄ + 2 O₂ ⟶ CO₂ + 2 H₂O',

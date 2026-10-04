@@ -260,6 +260,24 @@ export const VRCanvas: React.FC<VRCanvasProps> = ({
       group.add(mesh);
       atomMeshesRef.current.set(atom.id, mesh);
 
+      // Render Ionic Charge Glow Halo for cations (+) and anions (-)
+      const effectiveCharge = atom.formalCharge || (atom.charge ?? 0) || (Math.abs(atom.partialCharge || 0) > 0.3 ? atom.partialCharge : 0);
+      if (effectiveCharge && Math.abs(effectiveCharge) > 0.1) {
+        const ionicHaloGeom = new THREE.SphereGeometry(radius * 1.5, 24, 24);
+        const haloColor = effectiveCharge > 0 ? 0x38bdf8 : 0xf43f5e; // Blue for +, Red/Rose for -
+        const ionicHaloMat = new THREE.MeshPhysicalMaterial({
+          color: haloColor,
+          emissive: haloColor,
+          emissiveIntensity: 0.8,
+          transparent: true,
+          opacity: 0.35,
+          wireframe: true
+        });
+        const ionicHaloMesh = new THREE.Mesh(ionicHaloGeom, ionicHaloMat);
+        ionicHaloMesh.position.set(atom.x, atom.y, atom.z);
+        group.add(ionicHaloMesh);
+      }
+
       // Render translucent Van der Waals / Atomic Shell overlay if viewMode === 'atomic-radii'
       if (viewMode === 'atomic-radii') {
         const vdwGeom = new THREE.SphereGeometry(elem.vdwRadius * 0.7, 24, 24);
