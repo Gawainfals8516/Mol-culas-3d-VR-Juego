@@ -1,0 +1,6 @@
+{
+  "name": "QuantumVR ChemLab - Realidad Virtual Molecular y Creador de Materia",
+  "description": "Laboratorio de Realidad Virtual compatible con Android y Cardboard para visualizar moléculas 3D, simular orbitales atómicos, manipular campos cuánticos y crear fórmulas químicas al estilo ChemDraw en VR.",
+  "requestFramePermissions": ["camera", "gyroscope", "accelerometer"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
