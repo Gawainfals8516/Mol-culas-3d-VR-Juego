@@ -22,7 +22,7 @@ import { PeriodicTableModal } from './components/PeriodicTableModal';
 import { VRGuideModal } from './components/VRGuideModal';
 import { QuantumAIPanel } from './components/QuantumAIPanel';
 import { ChemicalReactionsPanel } from './components/ChemicalReactionsPanel';
-import { ShieldAlert, AlertTriangle, CheckCircle2, AlertOctagon } from 'lucide-react';
+import { AlertOctagon } from 'lucide-react';
 
 export default function App() {
   // 1. Core Molecular State
@@ -351,7 +351,7 @@ export default function App() {
 
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-gray-950 font-sans text-gray-100 select-none">
-      {/* 1. TOP BAR */}
+      {/* 1. TOP BAR (UNIFIED MINIMALIST BANNER & NAVIGATION) */}
       {vrMode !== 'cardboard' && (
         <TopBar
           zoomLevel={zoomLevel}
@@ -365,31 +365,9 @@ export default function App() {
           showAIPanel={showAIPanel}
           onToggleAIPanel={() => setShowAIPanel(prev => !prev)}
           onOpenReactionsModal={() => setIsReactionsModalOpen(true)}
+          stability={stability}
+          onStabilizeMolecule={handleStabilizeMolecule}
         />
-      )}
-
-      {/* 2. TOP STABILITY STATUS BANNER ("ANUNCIO DE ESTABILIDAD") */}
-      {vrMode !== 'cardboard' && (
-        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 px-4 py-2 rounded-2xl backdrop-blur-md border shadow-2xl transition-all duration-300 pointer-events-auto max-w-xl text-xs font-semibold">
-          <div className={`flex items-center gap-2 px-2.5 py-1 rounded-xl border ${stability.badgeBg}`}>
-            {!stability.canExist && <AlertOctagon className="w-4 h-4 text-rose-400 animate-bounce" />}
-            {stability.status === 'Muy Inestable' && <AlertTriangle className="w-4 h-4 text-amber-400" />}
-            {stability.status === 'Poco Estable / Reactivo' && <ShieldAlert className="w-4 h-4 text-sky-400" />}
-            {stability.status === 'Altamente Estable' && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
-            <span className="font-bold tracking-wide">{stability.status}</span>
-          </div>
-
-          <p className="text-[11px] text-gray-300 truncate max-w-md font-mono">
-            {stability.reasons[0] || 'Análisis de estabilidad en tiempo real.'}
-          </p>
-
-          <button
-            onClick={handleStabilizeMolecule}
-            className="px-2.5 py-1 text-[11px] font-bold text-emerald-100 bg-emerald-600 hover:bg-emerald-500 rounded-lg transition-colors whitespace-nowrap shadow-sm"
-          >
-            Estabilizar
-          </button>
-        </div>
       )}
 
       {/* 3. PHYSICAL WARNING TOAST POPUP */}
